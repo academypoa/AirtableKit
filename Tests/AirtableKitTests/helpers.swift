@@ -13,15 +13,25 @@ func date(_ iso: String) -> Date? {
 }
 
 func readFile(_ resource: String?, _ ext: String?) -> Data {
-    class _Class {}
-    
-    guard let url = Bundle(for: _Class.self).url(forResource: resource, withExtension: ext) else {
-        fatalError("unknown resource: \(resource ?? "").\(ext ?? "")")
+    switch resource {
+    case "multiple_records":
+        return Mocks.multipleRecords.data(using: .utf8)!
+    case "single_record":
+        return Mocks.singleRecord.data(using: .utf8)!
+    default:
+        fatalError("unknown resouce: \(resource!)")
     }
     
-    do {
-        return try Data(contentsOf: url)
-    } catch {
-        fatalError("failed to read data for resource at \(url)")
-    }
+    // TODO: fix when we start using swift 5.3 toolchain
+//    class _Class {}
+//
+//    guard let url = Bundle(for: _Class.self).url(forResource: resource, withExtension: ext) else {
+//        fatalError("unknown resource: \(resource ?? "").\(ext ?? "")")
+//    }
+//
+//    do {
+//        return try Data(contentsOf: url)
+//    } catch {
+//        fatalError("failed to read data for resource at \(url)")
+//    }
 }
