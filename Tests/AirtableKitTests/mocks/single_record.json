@@ -1,0 +1,27 @@
+{
+    "id": "rec9jki",
+    "fields": {
+        "email": "jane.doe@example.com",
+        "users": ["rachel", "chelsea"],
+        "file": [
+            {
+                "id": "flp6tr5",
+                "url": "https://dropbox.com/xyz",
+                "filename": "secret.jpg",
+            },
+        ],
+        "many": [
+            {
+                "id": "attdc4R",
+                "url": "https://dropbox.com/123",
+                "custom_field": 3.95,
+            },
+            {
+                "id": "attCG6D",
+                "url": "https://dropbox.com/rst",
+                "filename": "screenshot.png",
+            },
+        ]
+    },
+    "createdTime": "2019-12-12T15:32:43Z",
+}
