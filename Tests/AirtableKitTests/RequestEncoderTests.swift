@@ -9,6 +9,7 @@
 @testable import AirtableKit
 import Quick
 import Nimble
+import Foundation
 
 class RequestEncoderTests: QuickSpec {
     override func spec() {
