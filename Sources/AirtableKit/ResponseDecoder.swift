@@ -19,6 +19,16 @@ final class ResponseDecoder {
         try _decodeRecord(json: asJSON(data: data))
     }
     
+    ///
+    /// Decodes a delete response `Data` as a `Record`.
+    /// Since this operations does not have a `createdTime`, this field will holds the time in which the `record` was deleted
+    /// - Parameter data: Data returned from the request
+    /// - Throws: `AirtableError`
+    /// - Returns: The record containing the deletion operation payload.
+    func decodeDeleteResponse(data: Data) throws -> Record {
+        try _decodeDeleteResponse(json: asJSON(data: data))
+    }
+    
     /// Decodes a JSON `Data` as a list of `Record`s.
     ///
     /// - Throws: `AirtableError`.
@@ -37,6 +47,15 @@ final class ResponseDecoder {
         }
         
         return Attachment(id: id, url: url, filename: json["filename"] as? String, metadata: json)
+    }
+    
+    private func _decodeDeleteResponse(json: [String : Any]) throws -> Record {
+        guard let id = json["id"] as? String,
+            let deleted = json["deleted"] as? Bool else {
+                throw AirtableError.missingRequiredFields("id, deleted")
+        }
+        
+        return Record(id: id, createdTime: Date(), fields: ["deleted" : deleted], attachments: [:])
     }
     
     private func _decodeRecord(json: [String: Any]) throws -> Record {
