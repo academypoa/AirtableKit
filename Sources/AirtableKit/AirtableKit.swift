@@ -92,7 +92,7 @@ public final class Airtable {
     /// - Parameters:
     ///   - tableName: Name of the table where the record is.
     ///   - record: The record to be updated. Only the fields that should be updated need to be present. Create using `Record.update`
-    public func update(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
+    public func update(tableName: String, record: Record, destructive: Bool = false) -> AnyPublisher<Record, AirtableError> {
         guard let recordID = record.id else {
             let error = AirtableError.invalidParameters(operation: "patch",
                                                         parameters: [tableName, record, record.id as Any])
@@ -100,7 +100,7 @@ public final class Airtable {
         }
         
         var request = makeRequest(path: "\(tableName)/\(recordID)")
-        request.httpMethod = "PATCH"
+        request.httpMethod = destructive ? "PUT" : "PATCH"
         
         do {
             request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecord(record, shouldAddID: false))
