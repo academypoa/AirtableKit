@@ -58,7 +58,7 @@ final class ResponseDecoder {
         if !deleted {
             throw AirtableError.deleteOperationFailed(id)
         } else {
-            return Record(id: id, createdTime: Date(), fields: ["deleted" : deleted], attachments: [:])
+            return Record(fields: ["deleted" : deleted], id: id, attachments: [:])
         }
     }
     
