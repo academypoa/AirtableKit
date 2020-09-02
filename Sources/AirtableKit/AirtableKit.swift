@@ -110,6 +110,23 @@ public final class Airtable {
             .mapError(errorHander.mapError(_:))
             .eraseToAnyPublisher()
     }
+    
+    /// Deletes a record from a table.
+    ///
+    /// - Parameters:
+    ///   - tableName: Name of the table where the record is
+    ///   - record: The record to delete.
+    /// - Returns: A publisher with either the record which was deleted or an error
+    public func delete(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
+        var request = makeRequest(path: "\(tableName)/\(record.id)")
+        request.httpMethod = "DELETE"
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(responseDecoder.decodeRecord(data:))
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+    }
 }
 
 extension Airtable {
