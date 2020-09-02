@@ -39,7 +39,7 @@ final class RequestEncoder {
         ]
         
         // add id only if not empty
-        if shouldAddID && !record.id.isEmpty {
+        if shouldAddID, let recordID = record.id, !recordID.isEmpty {
             payload["id"] = record.id
         }
         
@@ -51,10 +51,10 @@ final class RequestEncoder {
         var payload = attachment.metadata
         
         payload["url"] = attachment.url?.absoluteString
-        payload["filename"] = attachment.filename
+        payload["filename"] = attachment.fileName
         
         // add id only if not empty
-        if !attachment.id.isEmpty {
+        if let attachmentID = attachment.id, !attachmentID.isEmpty {
             payload["id"] = attachment.id
         }
         

@@ -3,7 +3,7 @@ import Foundation
 
 /// Client used to manipulate an Airtable base.
 ///
-/// This is the facade of the framework, used to create, modify and get records and attachments from an Airtable base.
+/// This is the facade of the library, used to create, modify and get records and attachments from an Airtable base.
 public final class Airtable {
     
     /// ID of the base manipulated by the client.
@@ -93,7 +93,13 @@ public final class Airtable {
     ///   - tableName: Name of the table where the record is.
     ///   - record: The record to be updated. Only the fields that should be updated need to be present. Create using `Record.update`
     public func patch(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
-        var request = makeRequest(path: "\(tableName)/\(record.id)")
+        guard let recordID = record.id else {
+            let error = AirtableError.invalidParameters(operation: "patch",
+                                                        parameters: [tableName, record, record.id as Any])
+            return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
+        }
+        
+        var request = makeRequest(path: "\(tableName)/\(recordID)")
         request.httpMethod = "PATCH"
         
         do {
