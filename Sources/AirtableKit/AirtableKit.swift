@@ -92,7 +92,7 @@ public final class Airtable {
     /// - Parameters:
     ///   - tableName: Name of the table where the record is.
     ///   - record: The record to be updated. Only the fields that should be updated need to be present. Create using `Record.update`
-    public func patch(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
+    public func update(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
         guard let recordID = record.id else {
             let error = AirtableError.invalidParameters(operation: "patch",
                                                         parameters: [tableName, record, record.id as Any])
