@@ -47,14 +47,14 @@ public struct Attachment {
     /// Creates an attachment object to be used when interacting with AirtableKit classes.
     ///
     /// - Parameters:
-    ///   - id: The ID of the attachment. Pass `nil` when creating attachments, and a non-`nil` value when updating.
     ///   - url: The external URL hosting the attachment. Airtable will download a local copy of the attachment from this URL. Required when creating an
     ///          attachment; pass `nil` if you don't want to update the attachment contents.
+    ///   - id: The ID of the attachment. Pass `nil` when creating attachments, and a non-`nil` value when updating.
     ///   - fileName: An optional name for the file.
     ///   - metadata: Additional metadata, like dimensions (if it's an image). Not required.
-    public init(id: String? = nil, url: URL?, fileName: String? = nil, metadata: [String: Any] = [:]) {
-        self.id = id
+    public init(url: URL?, id: String? = nil, fileName: String? = nil, metadata: [String: Any] = [:]) {
         self.url = url
+        self.id = id
         self.fileName = fileName
         self.metadata = metadata
     }

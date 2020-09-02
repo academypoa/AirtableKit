@@ -11,13 +11,13 @@ class ModelsTest: QuickSpec {
             var record: Record!
             
             beforeEach {
-                record = Record(id: "rec123", fields: [
+                record = Record(fields: [
                     "name": "John",
                     "age": 34,
                     "photo": Attachment(url: URL(string: "https://placehold.it/300")),
-                    "images": [Attachment(id: "att123", url: nil),
-                               Attachment(id: "att456", url: nil)]
-                ])
+                    "images": [Attachment(url: nil, id: "att123"),
+                               Attachment(url: nil, id: "att456")]
+                ], id: "rec123")
             }
             
             it("doesn't assign the createdTime field") {
@@ -43,7 +43,7 @@ class ModelsTest: QuickSpec {
             
             context("creating an empty attachment") {
                 it("accepts all fields empty") {
-                    attachment = Attachment(id: nil, url: nil)
+                    attachment = Attachment(url: nil, id: nil)
                     
                     expect(attachment).toNot(beNil())
                 }

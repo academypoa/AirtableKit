@@ -32,14 +32,14 @@ class RequestEncoderTests: QuickSpec {
                 var fields: [String: Any]!
                 
                 beforeEach {
-                    record = Record(id: "rec222", fields: [
+                    record = Record(fields: [
                         "id": 9124,
                         "Name": "John Doe",
                         "url": URL(string: "https://apple.com")!,
                         "multi": ["a", "lp"],
                         "bool_data": true,
                         "dbl_data": 1.2,
-                    ])
+                    ], id: "rec222")
                     
                     encoded = encoder.encodeRecord(record)
                     fields = encoded["fields"] as? [String: Any]
@@ -98,7 +98,7 @@ class RequestEncoderTests: QuickSpec {
                 var encoded: [String: Any]!
                 
                 beforeEach {
-                    attachment = Attachment(id: "att382", url: nil, metadata: ["additional_data": 3982])
+                    attachment = Attachment(url: nil, id: "att382", metadata: ["additional_data": 3982])
                     encoded = encoder.encodeAttachment(attachment)
                 }
                 

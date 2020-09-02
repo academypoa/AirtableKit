@@ -33,9 +33,9 @@ public struct Record {
     ///   - id: The ID of the record; this should be `nil` if you're creating a record on a table, and not-`nil` if you're updating a record.
     ///   - fields: The fields (columns) of the table this record belongs to. Attachments should be set using the `attachments` parameter.
     ///   - attachments: Fields (columns) that store attachments. Attachments should be set only here or on the `attachments` property.
-    public init(id: String? = nil, fields: [String: Any], attachments: [String: [Attachment]] = [:]) {
-        self.id = id
+    public init(fields: [String: Any], id: String? = nil, attachments: [String: [Attachment]] = [:]) {
         self.fields = fields
+        self.id = id
         self.attachments = attachments
     }
 }
