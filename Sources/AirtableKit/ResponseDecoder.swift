@@ -36,7 +36,7 @@ final class ResponseDecoder {
                 return nil
         }
         
-        return Attachment(id: id, url: url, filename: json["filename"] as? String, metadata: json)
+        return Attachment(url: url, id: id, fileName: json["filename"] as? String, metadata: json)
     }
     
     private func _decodeRecord(json: [String: Any]) throws -> Record {
@@ -61,7 +61,9 @@ final class ResponseDecoder {
             return mapped
         }
         
-        return Record(id: id, createdTime: createdTime, fields: fields, attachments: attachments)
+        var record = Record(fields: fields, id: id, attachments: attachments)
+        record.createdTime = createdTime
+        return record
     }
     
     // MARK: - Helpers

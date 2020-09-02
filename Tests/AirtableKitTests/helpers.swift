@@ -1,11 +1,3 @@
-//
-//  helpers.swift
-//  AirtableTests
-//
-//  Created by Rafael Victor Ruwer Araujo on 28/01/20.
-//  Copyright © 2020 Apple Developer Academy | POA. All rights reserved.
-//
-
 import Foundation
 
 func date(_ iso: String) -> Date? {

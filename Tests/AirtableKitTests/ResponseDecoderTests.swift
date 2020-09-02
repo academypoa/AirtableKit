@@ -1,11 +1,3 @@
-//
-//  ResponseDecoderTests.swift
-//  AirtableTests
-//
-//  Created by Rafael Victor Ruwer Araujo on 04/02/20.
-//  Copyright © 2020 Apple Developer Academy | POA. All rights reserved.
-//
-
 @testable import AirtableKit
 import Quick
 import Nimble
