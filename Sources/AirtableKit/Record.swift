@@ -6,10 +6,14 @@ import Foundation
 public struct Record {
     
     /// ID of the record.
-    public let id: String
+    ///
+    /// The ID is always present when the record is read from Airtable's API, and should be informed when updating a record.
+    public var id: String?
     
     /// Date and time the record was created.
-    public let createdTime: Date
+    ///
+    /// This field is set when fetching records from Airtable; if `nil`, the record still isn't saved on Airtable.
+    public internal(set) var createdTime: Date?
     
     /// Fields (columns) of the record.
     ///
@@ -22,23 +26,16 @@ public struct Record {
     ///
     /// Any field with an array of objects with `id` and `url` keys is treated as an attachment. These fields are still present in the `fields` property.
     public var attachments: [String: [Attachment]]
-}
-
-extension Record {
     
-    /// Creates a record with the required properties to be created on a table.
-    ///
-    /// - Parameter fields: The fields of the record being created.
-    public static func create(fields: [String: Any], attachments: [String: [Attachment]] = [:]) -> Record {
-        Record(id: "", createdTime: Date(), fields: fields, attachments: attachments)
-    }
-    
-    /// Creates a record with the required properties to update an existing Airtable record.
+    /// Instantiates a record to be used when interacting with AirtableKit classes.
     ///
     /// - Parameters:
-    ///   - id: The ID of the record being updated.
-    ///   - fields: The new values of the record.
-    public static func update(id: String, fields: [String: Any], attachments: [String: [Attachment]] = [:]) -> Record {
-        Record(id: id, createdTime: Date(), fields: fields, attachments: attachments)
+    ///   - id: The ID of the record; this should be `nil` if you're creating a record on a table, and not-`nil` if you're updating a record.
+    ///   - fields: The fields (columns) of the table this record belongs to. Attachments should be set using the `attachments` parameter.
+    ///   - attachments: Fields (columns) that store attachments. Attachments should be set only here or on the `attachments` property.
+    public init(id: String? = nil, fields: [String: Any], attachments: [String: [Attachment]] = [:]) {
+        self.id = id
+        self.fields = fields
+        self.attachments = attachments
     }
 }

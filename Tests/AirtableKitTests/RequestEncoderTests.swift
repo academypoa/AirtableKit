@@ -17,7 +17,7 @@ class RequestEncoderTests: QuickSpec {
                 var encoded: [String: Any]!
                 
                 beforeEach {
-                    record = Record.create(fields: ["some_data": 3.1415])
+                    record = Record(fields: ["some_data": 3.1415])
                     encoded = encoder.encodeRecord(record)
                 }
                 
@@ -32,7 +32,7 @@ class RequestEncoderTests: QuickSpec {
                 var fields: [String: Any]!
                 
                 beforeEach {
-                    record = Record.update(id: "rec222", fields: [
+                    record = Record(id: "rec222", fields: [
                         "id": 9124,
                         "Name": "John Doe",
                         "url": URL(string: "https://apple.com")!,
@@ -80,7 +80,7 @@ class RequestEncoderTests: QuickSpec {
                 var encoded: [String: Any]!
                 
                 beforeEach {
-                    attachment = Attachment.create(url: URL(string: "https://placehold.it/200")!)
+                    attachment = Attachment(url: URL(string: "https://placehold.it/200")!)
                     encoded = encoder.encodeAttachment(attachment)
                 }
                 
@@ -98,11 +98,7 @@ class RequestEncoderTests: QuickSpec {
                 var encoded: [String: Any]!
                 
                 beforeEach {
-                    attachment = Attachment.update(
-                        id: "att382",
-                        metadata: ["additional_data": 3982]
-                    )
-                    
+                    attachment = Attachment(id: "att382", url: nil, metadata: ["additional_data": 3982])
                     encoded = encoder.encodeAttachment(attachment)
                 }
                 
@@ -126,8 +122,8 @@ class RequestEncoderTests: QuickSpec {
                 var fields: [String: Any]!
                 
                 beforeEach {
-                    attachment = Attachment.create(url: URL(string: "https://placehold.it/200")!)
-                    record = Record.create(fields: [
+                    attachment = Attachment(url: URL(string: "https://placehold.it/200")!)
+                    record = Record(fields: [
                         "single": attachment as Any,
                         "multiple": [attachment, attachment]
                     ])
