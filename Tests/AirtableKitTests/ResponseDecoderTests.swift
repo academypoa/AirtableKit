@@ -61,6 +61,20 @@ class ResponseDecoderTests: QuickSpec {
                 }
             }
             
+            context("decoding a delete single record response") {
+                let data = readFile("single_record_delete", "json")
+                var record: Record!
+                
+                beforeEach {
+                    record = try? decoder.decodeDeleteResponse(data: data)
+                }
+                
+                it("decodes the positive response") {
+                    expect(record.id) == "rec2yKtdiltjPFu8g"
+                    expect((record.fields["deleted"] as? Bool) ?? false) == true
+                }
+            }
+            
             context("decoding multiple records") {
                 let data = readFile("multiple_records", "json")
                 var records: [Record]!
