@@ -125,7 +125,7 @@ public final class Airtable {
     /// - Returns: A publisher with either the record which was deleted or an error
     public func delete(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
         guard let id = record.id else {
-            let error = AirtableError.deleteOperationFailed("Delete requires that the record object possess an id")
+            let error = AirtableError.missingRequiredFields("id")
             return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
         }
         var request = makeRequest(path: "\(tableName)/\(id)")
