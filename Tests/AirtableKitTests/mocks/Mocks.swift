@@ -64,4 +64,11 @@ enum Mocks {
     }
     """
     
+    static let singleRecordDeleteFail: String = """
+    {
+        "id": "rec2yKtdiltjPFu8g",
+        "deleted": false
+    }
+    """
+    
 }

@@ -55,7 +55,11 @@ final class ResponseDecoder {
                 throw AirtableError.missingRequiredFields("id, deleted")
         }
         
-        return Record(id: id, createdTime: Date(), fields: ["deleted" : deleted], attachments: [:])
+        if !deleted {
+            throw AirtableError.deleteOperationFailed(id)
+        } else {
+            return Record(id: id, createdTime: Date(), fields: ["deleted" : deleted], attachments: [:])
+        }
     }
     
     private func _decodeRecord(json: [String: Any]) throws -> Record {
