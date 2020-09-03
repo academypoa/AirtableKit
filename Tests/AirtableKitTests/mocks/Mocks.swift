@@ -56,4 +56,19 @@ enum Mocks {
         "createdTime": "2019-12-12T15:32:43Z",
     }
     """
+    
+    static let singleRecordDelete: String = """
+    {
+        "id": "rec2yKtdiltjPFu8g",
+        "deleted": true
+    }
+    """
+    
+    static let singleRecordDeleteFail: String = """
+    {
+        "id": "rec2yKtdiltjPFu8g",
+        "deleted": false
+    }
+    """
+    
 }

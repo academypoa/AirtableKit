@@ -21,6 +21,9 @@ public enum AirtableError: Error, LocalizedError {
     /// Network error. See the associated `URLError` for more info.
     case network(URLError)
     
+    /// Delete operation did not complete sucessfully for the record id
+    case deleteOperationFailed(String)
+    
     /// Unknown error.
     case unknown
     
@@ -48,6 +51,8 @@ public enum AirtableError: Error, LocalizedError {
             """
         case let .network(urlError):
             return "networking error: \(urlError.localizedDescription)"
+        case let .deleteOperationFailed(id):
+            return "Delete operation status returned `false` for record with id:\(id)"
         case .unknown:
             return "unknown error"
         }
