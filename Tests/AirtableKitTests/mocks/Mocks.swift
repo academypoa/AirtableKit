@@ -14,14 +14,14 @@ enum Mocks {
                     "multi": ["abc", "xyz"],
                     "dbl": 3.5,
                 },
-                "createdTime": "2020-01-01T20:45:17Z",
+                "createdTime": "2017-10-17T11:37:26.000Z",
             },
             {
                 "id": "recPm9",
                 "fields": {
                     "name": "mark",
                 },
-                "createdTime": "2018-01-19T20:52:07Z",
+                "createdTime": "2017-10-16T11:37:26.000Z",
             }
         ]
     }
@@ -53,7 +53,22 @@ enum Mocks {
                 },
             ]
         },
-        "createdTime": "2019-12-12T15:32:43Z",
+        "createdTime": "2017-10-16T11:37:26.000Z",
     }
     """
+    
+    static let singleRecordDelete: String = """
+    {
+        "id": "rec2yKtdiltjPFu8g",
+        "deleted": true
+    }
+    """
+    
+    static let singleRecordDeleteFail: String = """
+    {
+        "id": "rec2yKtdiltjPFu8g",
+        "deleted": false
+    }
+    """
+    
 }

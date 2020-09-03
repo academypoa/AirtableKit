@@ -6,9 +6,9 @@ import Foundation
 final class ResponseDecoder {
     
     /// Date formatter used for writing dates to JSON objects
-    private static let formatter: DateFormatter = {
+    static let formatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
         return formatter
     }()
     
@@ -17,6 +17,16 @@ final class ResponseDecoder {
     /// - Throws: `AirtableError`.
     func decodeRecord(data: Data) throws -> Record {
         try _decodeRecord(json: asJSON(data: data))
+    }
+    
+    ///
+    /// Decodes a delete response `Data` as a `Record`.
+    /// Since this operations does not have a `createdTime`, this field will holds the time in which the `record` was deleted
+    /// - Parameter data: Data returned from the request
+    /// - Throws: `AirtableError`
+    /// - Returns: The record containing the deletion operation payload.
+    func decodeDeleteResponse(data: Data) throws -> Record {
+        try _decodeDeleteResponse(json: asJSON(data: data))
     }
     
     /// Decodes a JSON `Data` as a list of `Record`s.
@@ -39,13 +49,24 @@ final class ResponseDecoder {
         return Attachment(url: url, id: id, fileName: json["filename"] as? String, metadata: json)
     }
     
-    private func _decodeRecord(json: [String: Any]) throws -> Record {
+    private func _decodeDeleteResponse(json: [String : Any]) throws -> Record {
         guard let id = json["id"] as? String,
-            let createdTimeString = json["createdTime"] as? String,
-            let createdTime = Self.formatter.date(from: createdTimeString),
-            let fields = json["fields"] as? [String: Any] else {
-                throw AirtableError.missingRequiredFields("id, createdTime, fields")
+            let deleted = json["deleted"] as? Bool else {
+                throw AirtableError.missingRequiredFields("id, deleted")
         }
+        
+        if !deleted {
+            throw AirtableError.deleteOperationFailed(id)
+        } else {
+            return Record(fields: ["deleted" : deleted], id: id, attachments: [:])
+        }
+    }
+    
+    private func _decodeRecord(json: [String: Any]) throws -> Record {
+        guard let id = json["id"] as? String else { throw AirtableError.missingRequiredFields("id") }
+        guard let createdTimeString = json["createdTime"] as? String else { throw AirtableError.missingRequiredFields("createdTime") }
+        guard let fields = json["fields"] as? [String: Any] else { throw AirtableError.missingRequiredFields("fields") }
+        guard let createdTime = Self.formatter.date(from: createdTimeString) else { throw AirtableError.dateDecodingError(createdTimeString)}
         
         // convert fields to possible attachments
         let attachments = fields.compactMapValues { value -> [Attachment]? in

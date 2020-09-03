@@ -9,6 +9,9 @@ public enum AirtableError: Error, LocalizedError {
     /// The resource (table, record, attachment) doesn't exist.
     case notFound
     
+    /// A date object could not be properly decoded
+    case dateDecodingError(String)
+    
     /// The response received is not a valid JSON.
     case invalidResponse(Data)
     
@@ -21,6 +24,9 @@ public enum AirtableError: Error, LocalizedError {
     /// Network error. See the associated `URLError` for more info.
     case network(URLError)
     
+    /// Delete operation did not complete sucessfully for the record id
+    case deleteOperationFailed(String)
+    
     /// Unknown error.
     case unknown
     
@@ -28,6 +34,8 @@ public enum AirtableError: Error, LocalizedError {
         switch self {
         case let .missingRequiredFields(fields):
             return "missing required fields: \(fields)"
+        case let .dateDecodingError(value):
+            return "date does not have the expected format \(value)"
         case .notFound:
             return "the requested resource could not be found"
         case let .invalidResponse(data):
@@ -48,6 +56,8 @@ public enum AirtableError: Error, LocalizedError {
             """
         case let .network(urlError):
             return "networking error: \(urlError.localizedDescription)"
+        case let .deleteOperationFailed(id):
+            return "Delete operation status returned `false` for record with id:\(id)"
         case .unknown:
             return "unknown error"
         }

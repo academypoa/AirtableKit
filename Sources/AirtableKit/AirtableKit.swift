@@ -92,7 +92,8 @@ public final class Airtable {
     /// - Parameters:
     ///   - tableName: Name of the table where the record is.
     ///   - record: The record to be updated. Only the fields that should be updated need to be present. Create using `Record.update`
-    public func patch(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
+    ///   - replacesEntireRecord: Indicates whether the operation should replace the entire record or just updates the appropriate fields
+    public func update(tableName: String, record: Record, replacesEntireRecord: Bool = false) -> AnyPublisher<Record, AirtableError> {
         guard let recordID = record.id else {
             let error = AirtableError.invalidParameters(operation: "patch",
                                                         parameters: [tableName, record, record.id as Any])
@@ -100,7 +101,7 @@ public final class Airtable {
         }
         
         var request = makeRequest(path: "\(tableName)/\(recordID)")
-        request.httpMethod = "PATCH"
+        request.httpMethod = replacesEntireRecord ? "PUT" : "PATCH"
         
         do {
             request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecord(record, shouldAddID: false))
@@ -109,6 +110,27 @@ public final class Airtable {
             let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, record])
             return Fail<Record, AirtableError>(error: err).eraseToAnyPublisher()
         }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(responseDecoder.decodeRecord(data:))
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+    }
+    
+    /// Deletes a record from a table.
+    ///
+    /// - Parameters:
+    ///   - tableName: Name of the table where the record is
+    ///   - record: The record to delete.
+    /// - Returns: A publisher with either the record which was deleted or an error
+    public func delete(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
+        guard let id = record.id else {
+            let error = AirtableError.missingRequiredFields("id")
+            return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
+        }
+        var request = makeRequest(path: "\(tableName)/\(id)")
+        request.httpMethod = "DELETE"
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .tryMap(errorHander.mapResponse(_:))

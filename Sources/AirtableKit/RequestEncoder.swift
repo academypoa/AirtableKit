@@ -25,6 +25,13 @@ final class RequestEncoder {
                 return urls.map { $0.absoluteString }
             }
             
+            // Date
+            if let date = value as? Date {
+                let dateString = ResponseDecoder.formatter.string(from: date)
+                print("Date encoded: \(dateString)")
+                return dateString
+            }
+            
             return value
         }
         

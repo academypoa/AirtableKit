@@ -39,7 +39,8 @@ class ResponseDecoderTests: QuickSpec {
                 
                 it("decodes the metadata correctly") {
                     expect(record.id) == "rec9jki"
-                    expect(record.createdTime) == date("2019-12-12T15:32:43Z")
+                    expect(record.createdTime) == date(day: 16, month: 10, year: 2017,
+                                                       hour: 11, minute: 37, second: 26)
                     expect(record.fields.count) == 4
                 }
                 
@@ -50,6 +51,48 @@ class ResponseDecoderTests: QuickSpec {
                 it("decodes multiple attachments correctly") {
                     expect(record.attachments["many"]?.count) == 2
                     dump(record)
+                }
+            }
+            
+            context("decoding a delete single record response") {
+                context("when it succeeds") {
+                    let data = readFile("single_record_delete", "json")
+                    var record: Record!
+                    
+                    beforeEach {
+                        record = try? decoder.decodeDeleteResponse(data: data)
+                    }
+                    
+                    it("decodes the positive response") {
+                        expect(record.id) == "rec2yKtdiltjPFu8g"
+                        expect((record.fields["deleted"] as? Bool) ?? false) == true
+                    }
+                }
+                
+                context("when it fails") {
+                    let data = readFile("single_record_delete_fail", "json")
+                    var record: Record!
+                    var err: AirtableError!
+                    
+                    beforeEach {
+                        do {
+                            record = try decoder.decodeDeleteResponse(data: data)
+                        } catch {
+                            err = error as? AirtableError
+                        }
+                    }
+                    
+                    it("decodes the appropriate error") {
+                        expect(record).to(beNil())
+                        expect(err).toNot(beNil())
+                        
+                        if case let AirtableError.deleteOperationFailed(value) = err! {
+                            expect(value).to(equal("rec2yKtdiltjPFu8g"))
+                        } else {
+                            fail("Expected `Airtable.deleteOperationFailed` but got \(err!)")
+                        }
+                        
+                    }
                 }
             }
             
