@@ -12,7 +12,8 @@ public final class Airtable {
     /// API key of the user manipulating the base.
     public let apiKey: String
     
-    static let airtableURL: URL = URL(string: "https://api.airtable.com/v0")!
+    private static let batchLimit: Int = 10
+    private static let airtableURL: URL = URL(string: "https://api.airtable.com/v0")!
     private var baseURL: URL { Self.airtableURL.appendingPathComponent(baseID) }
     
     private let requestEncoder: RequestEncoder = RequestEncoder()
@@ -28,6 +29,8 @@ public final class Airtable {
         self.baseID = baseID
         self.apiKey = apiKey
     }
+    
+    // MARK: - Recover records from a table
     
     /// Lists all records in a table.
     ///
@@ -63,11 +66,13 @@ public final class Airtable {
             .eraseToAnyPublisher()
     }
     
+    // MARK: - Add records to a table
+    
     /// Creates a record on a table.
     ///
     /// - Parameters:
     ///   - tableName: Name of the table where the record is.
-    ///   - record: The record to be created. Create using `Record.create`.
+    ///   - record: The record to be created. The record should have `id == nil`.
     public func create(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
         var request = makeRequest(path: tableName)
         request.httpMethod = "POST"
@@ -87,11 +92,52 @@ public final class Airtable {
             .eraseToAnyPublisher()
     }
     
-    /// Updates a record overwriting only the fields specified in `record`.
+    /// Creates multiple records on a table.
+    ///
+    /// - Parameters:
+    ///   - tableName: Name  of the table where the record is.
+    ///   - records: The records to be created. All records should have `id == nil`.
+    public func create(tableName: String, records: [Record]) -> AnyPublisher<[Record], AirtableError> {
+        let batches = records.chunked(by: Self.batchLimit)
+        
+        return Publishers.Sequence(sequence: batches)
+            .flatMap { self.performCreateBatch(tableName: tableName, records: $0) }
+            .reduce([Record](), +)
+            .eraseToAnyPublisher()
+    }
+    
+    private func performCreateBatch(tableName: String, records: [Record]) -> AnyPublisher<[Record], AirtableError> {
+        precondition(records.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
+        
+        var request = makeRequest(path: tableName)
+        request.httpMethod = "POST"
+        
+        do {
+            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecords(records, shouldAddID: false))
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        } catch {
+            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, records])
+            return Fail(error: err).eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(responseDecoder.decodeRecords(data:))
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+        
+    }
+    
+    // MARK: - Update records on a table
+    
+    /// Updates a record.
+    ///
+    /// If `replacesEntireRecord == false` (the default), only the fields specified by the record are overwritten (like a `PATCH`); else, all fields are
+    /// overwritten and fields not present on the record are emptied on Airtable (like a `PUT`).
     ///
     /// - Parameters:
     ///   - tableName: Name of the table where the record is.
-    ///   - record: The record to be updated. Only the fields that should be updated need to be present. Create using `Record.update`
+    ///   - record: The record to be updated. The `id` property **must not** be `nil`.
     ///   - replacesEntireRecord: Indicates whether the operation should replace the entire record or just updates the appropriate fields
     public func update(tableName: String, record: Record, replacesEntireRecord: Bool = false) -> AnyPublisher<Record, AirtableError> {
         guard let recordID = record.id else {
@@ -118,6 +164,47 @@ public final class Airtable {
             .eraseToAnyPublisher()
     }
     
+    /// Updates multiple records.
+    ///
+    /// If `replacesEntireRecord == false` (the default), only the fields specified by each record is overwritten (like a `PATCH`); else, all fields are
+    /// overwritten and fields not present on each record is emptied on Airtable (like a `PUT`).
+    ///
+    /// - Parameters:
+    ///   - tableName: Name of the table where the record is.
+    ///   - records: The records to be updated.
+    ///   - replacesEntireRecord: Indicates whether the operation should replace the entire record or just update the appropriate fields.
+    public func update(tableName: String, records: [Record], replacesEntireRecords: Bool = false) -> AnyPublisher<[Record], AirtableError> {
+        let batches = records.chunked(by: Self.batchLimit)
+        
+        return Publishers.Sequence(sequence: batches)
+            .flatMap { self.performUpdateBatch(tableName: tableName, records: $0, replacesEntireRecords: replacesEntireRecords) }
+            .reduce([Record](), +)
+            .eraseToAnyPublisher()
+    }
+    
+    private func performUpdateBatch(tableName: String, records: [Record], replacesEntireRecords: Bool) -> AnyPublisher<[Record], AirtableError> {
+        precondition(records.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
+        
+        var request = makeRequest(path: tableName)
+        request.httpMethod = replacesEntireRecords ? "PUT" : "PATCH"
+        
+        do {
+            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecords(records, shouldAddID: true))
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        } catch {
+            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, records])
+            return Fail(error: err).eraseToAnyPublisher()
+        }
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(responseDecoder.decodeRecords(data:))
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+    }
+    
+    // MARK: - Detele records from a table
+    
     /// Deletes a record from a table.
     ///
     /// - Parameters:
@@ -129,7 +216,40 @@ public final class Airtable {
             let error = AirtableError.missingRequiredFields("id")
             return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
         }
+        
         var request = makeRequest(path: "\(tableName)/\(id)")
+        request.httpMethod = "DELETE"
+        
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(responseDecoder.decodeDeleteResponse(data:))
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+    }
+    
+    /// Deletes multiple records by their ID.
+    ///
+    /// - Parameters:
+    ///   - tableName: Name of the table where the records are.
+    ///   - recordIDs: IDs of the records to be deleted.
+    public func delete(tableName: String, recordIDs: [String]) -> AnyPublisher<[String], AirtableError> {
+        let batches = recordIDs.chunked(by: Self.batchLimit)
+        
+        return Publishers.Sequence(sequence: batches)
+            .flatMap { self.performDeleteBatch(tableName: tableName, recordIDs: $0) }
+            .reduce([String]()) { $0 + $1 }
+            .eraseToAnyPublisher()
+    }
+    
+    private func performDeleteBatch(tableName: String, recordIDs: [String]) -> AnyPublisher<[String], AirtableError> {
+        precondition(recordIDs.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
+        
+        let queryItems = recordIDs.map { URLQueryItem(name: "records[]", value: $0) }
+        guard var request = makeRequest(path: tableName, queryItems: queryItems) else {
+            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, recordIDs])
+            return Fail(error: err).eraseToAnyPublisher()
+        }
+        
         request.httpMethod = "DELETE"
         
         return URLSession.shared.dataTaskPublisher(for: request)
@@ -138,6 +258,7 @@ public final class Airtable {
             .mapError(errorHander.mapError(_:))
             .eraseToAnyPublisher()
     }
+    
 }
 
 extension Airtable {
