@@ -39,16 +39,9 @@ public final class Airtable {
     ///   - fields: Names of the fields that should be included in the response.
     public func list(tableName: String, fields: [String] = []) -> AnyPublisher<[Record], AirtableError> {
         let queryItems = fields.isEmpty ? nil : fields.map { URLQueryItem(name: "fields[]", value: $0) }
-        guard let request = makeRequest(path: tableName, queryItems: queryItems) else {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, fields])
-            return Fail<[Record], AirtableError>(error: err).eraseToAnyPublisher()
-        }
+        let request = buildRequest(method: "GET", path: tableName, queryItems: queryItems)
         
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecords(data:))
-            .mapError(errorHander.mapError(_:))
-            .eraseToAnyPublisher()
+        return performRequest(request, decoder: responseDecoder.decodeRecords(data:))
     }
     
     /// Gets a single record in a table.
@@ -57,13 +50,8 @@ public final class Airtable {
     ///   - tableName: Name of the table where the record is.
     ///   - recordID: The ID of the record to be fetched.
     public func get(tableName: String, recordID: String) -> AnyPublisher<Record, AirtableError> {
-        let request = makeRequest(path: "\(tableName)/\(recordID)")
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecord(data:))
-            .mapError(errorHander.mapError(_:))
-            .eraseToAnyPublisher()
+        let request = buildRequest(method: "GET", path: "\(tableName)/\(recordID)")
+        return performRequest(request, decoder: responseDecoder.decodeRecord(data:))
     }
     
     // MARK: - Add records to a table
@@ -74,22 +62,13 @@ public final class Airtable {
     ///   - tableName: Name of the table where the record is.
     ///   - record: The record to be created. The record should have `id == nil`.
     public func create(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
-        var request = makeRequest(path: tableName)
-        request.httpMethod = "POST"
+        let request = buildRequest(
+            method: "POST",
+            path: tableName,
+            payload: requestEncoder.encodeRecord(record, shouldAddID: false)
+        )
         
-        do {
-            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecord(record, shouldAddID: false))
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        } catch {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, record])
-            return Fail<Record, AirtableError>(error: err).eraseToAnyPublisher()
-        }
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecord(data:))
-            .mapError(errorHander.mapError(_:))
-            .eraseToAnyPublisher()
+        return performRequest(request, decoder: responseDecoder.decodeRecord(data:))
     }
     
     /// Creates multiple records on a table.
@@ -98,19 +77,14 @@ public final class Airtable {
     ///   - tableName: Name  of the table where the record is.
     ///   - records: The records to be created. All records should have `id == nil`.
     public func create(tableName: String, records: [Record]) -> AnyPublisher<[Record], AirtableError> {
-        let batches = records.chunked(by: Self.batchLimit)
-        
-        let publisherForBatch = { (records: [Record]) in
-            self.performBatchRequest(
-                method: "POST",
-                tableName: tableName,
-                payload: self.requestEncoder.encodeRecords(records, shouldAddID: false),
-                decoder: self.responseDecoder.decodeRecords(data:)
-            )
-        }
+        let batches: [URLRequest?] = records.chunked(by: Self.batchLimit)
+            .map { requestEncoder.encodeRecords($0, shouldAddID: false) }
+            .map { buildRequest(method: "POST", path: tableName, payload: $0) }
         
         return Publishers.Sequence(sequence: batches)
-            .flatMap(publisherForBatch)
+            .flatMap { request in
+                self.performRequest(request, decoder: self.responseDecoder.decodeRecords(data:))
+            }
             .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
@@ -128,27 +102,17 @@ public final class Airtable {
     ///   - replacesEntireRecord: Indicates whether the operation should replace the entire record or just updates the appropriate fields
     public func update(tableName: String, record: Record, replacesEntireRecord: Bool = false) -> AnyPublisher<Record, AirtableError> {
         guard let recordID = record.id else {
-            let error = AirtableError.invalidParameters(operation: "patch",
-                                                        parameters: [tableName, record, record.id as Any])
+            let error = AirtableError.invalidParameters(operation: #function, parameters: [tableName, record])
             return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
         }
         
-        var request = makeRequest(path: "\(tableName)/\(recordID)")
-        request.httpMethod = replacesEntireRecord ? "PUT" : "PATCH"
+        let request = buildRequest(
+            method: replacesEntireRecord ? "PUT" : "PATCH",
+            path: "\(tableName)/\(recordID)",
+            payload: requestEncoder.encodeRecord(record, shouldAddID: false)
+        )
         
-        do {
-            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecord(record, shouldAddID: false))
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        } catch {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, record])
-            return Fail<Record, AirtableError>(error: err).eraseToAnyPublisher()
-        }
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecord(data:))
-            .mapError(errorHander.mapError(_:))
-            .eraseToAnyPublisher()
+        return performRequest(request, decoder: responseDecoder.decodeRecord(data:))
     }
     
     /// Updates multiple records.
@@ -161,19 +125,17 @@ public final class Airtable {
     ///   - records: The records to be updated.
     ///   - replacesEntireRecord: Indicates whether the operation should replace the entire record or just update the appropriate fields.
     public func update(tableName: String, records: [Record], replacesEntireRecords: Bool = false) -> AnyPublisher<[Record], AirtableError> {
-        let batches = records.chunked(by: Self.batchLimit)
+        let method = replacesEntireRecords ? "PUT" : "PATCH"
         
-        let publisherForBatch = { (records: [Record]) in
-            self.performBatchRequest(
-                method: replacesEntireRecords ? "PUT" : "PATCH",
-                tableName: tableName,
-                payload: self.requestEncoder.encodeRecords(records, shouldAddID: true),
-                decoder: self.responseDecoder.decodeRecords(data:)
-            )
-        }
+        let batches: [URLRequest?] = records
+            .chunked(by: Self.batchLimit)
+            .map { requestEncoder.encodeRecords($0, shouldAddID: true) }
+            .map { buildRequest(method: method, path: tableName, payload: $0) }
         
         return Publishers.Sequence(sequence: batches)
-            .flatMap(publisherForBatch)
+            .flatMap { request in
+                self.performRequest(request, decoder: self.responseDecoder.decodeRecords(data:))
+            }
             .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
@@ -192,14 +154,8 @@ public final class Airtable {
             return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
         }
         
-        var request = makeRequest(path: "\(tableName)/\(id)")
-        request.httpMethod = "DELETE"
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeDeleteResponse(data:))
-            .mapError(errorHander.mapError(_:))
-            .eraseToAnyPublisher()
+        let request = buildRequest(method: "DELETE", path: "\(tableName)/\(id)")
+        return performRequest(request, decoder: responseDecoder.decodeDeleteResponse(data:))
     }
     
     /// Deletes multiple records by their ID.
@@ -210,76 +166,60 @@ public final class Airtable {
     public func delete(tableName: String, recordIDs: [String]) -> AnyPublisher<[Record], AirtableError> {
         let batches = recordIDs.map { URLQueryItem(name: "records[]", value: $0) }
             .chunked(by: Self.batchLimit)
-        
-        let publisherForBatch = { (queryItems: [URLQueryItem]) in
-            self.performBatchRequest(
-                method: "DELETE",
-                tableName: tableName,
-                queryItems: queryItems,
-                decoder: self.responseDecoder.decodeBatchDeleteResponse(data:)
-            )
-        }
+            .map { buildRequest(method: "DELETE", path: tableName, queryItems: $0) }
         
         return Publishers.Sequence(sequence: batches)
-            .flatMap(publisherForBatch)
+            .flatMap { request in
+                self.performRequest(request, decoder: self.responseDecoder.decodeBatchDeleteResponse(data:))
+            }
             .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
     
 }
 
+// MARK: - Helpers
+
 extension Airtable {
-    private func performBatchRequest<T>(
-        method: String,
-        tableName: String,
-        queryItems: [URLQueryItem]? = nil,
-        payload: [String: Any]? = nil,
-        decoder: @escaping (Data) throws -> T
-    ) -> AnyPublisher<T, AirtableError> {
-        
-        // prepare the request
-        guard var request = makeRequest(path: tableName, queryItems: queryItems) else {
-            let error = AirtableError.invalidParameters(operation: #function,
-                                                        parameters: [method, tableName, queryItems as Any, payload as Any])
+    
+    private func performRequest<T>(_ request: URLRequest?, decoder: @escaping (Data) throws -> T) -> AnyPublisher<T, AirtableError> {
+        guard let urlRequest = request else {
+            let error = AirtableError.invalidParameters(operation: #function, parameters: [request as Any])
             return Fail(error: error).eraseToAnyPublisher()
         }
         
-        request.httpMethod = method
-        
-        // set the payload
-        if let payload = payload {
-            do {
-                request.httpBody = try requestEncoder.asData(json: payload)
-                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            } catch {
-                let err = AirtableError.invalidParameters(operation: #function,
-                                                          parameters: [method, tableName, queryItems as Any, payload])
-                return Fail(error: err).eraseToAnyPublisher()
-            }
-        }
-        
-        // perform the request
-        return URLSession.shared.dataTaskPublisher(for: request)
+        return URLSession.shared.dataTaskPublisher(for: urlRequest)
             .tryMap(errorHander.mapResponse(_:))
             .tryMap(decoder)
             .mapError(errorHander.mapError(_:))
             .eraseToAnyPublisher()
     }
     
-    private func makeRequest(path: String) -> URLRequest {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        return request
-    }
-    
-    private func makeRequest(path: String, queryItems: [URLQueryItem]?) -> URLRequest? {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
-        components?.queryItems = queryItems
+    private func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil) -> URLRequest? {
+        let url: URL?
         
-        guard let url = components?.url else { return nil }
+        if let queryItems = queryItems {
+            var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
+            components?.queryItems = queryItems
+            url = components?.url
+        } else {
+            url = baseURL.appendingPathComponent(path)
+        }
         
-        var request = URLRequest(url: url)
+        guard let theURL = url else { return nil }
+        
+        var request = URLRequest(url: theURL)
+        request.httpMethod = method
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        
+        if let payload = payload {
+            do {
+                request.httpBody = try requestEncoder.asData(json: payload)
+                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            } catch {
+                return nil
+            }
+        }
         
         return request
     }
