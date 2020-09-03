@@ -232,16 +232,16 @@ public final class Airtable {
     /// - Parameters:
     ///   - tableName: Name of the table where the records are.
     ///   - recordIDs: IDs of the records to be deleted.
-    public func delete(tableName: String, recordIDs: [String]) -> AnyPublisher<[String], AirtableError> {
+    public func delete(tableName: String, recordIDs: [String]) -> AnyPublisher<[Record], AirtableError> {
         let batches = recordIDs.chunked(by: Self.batchLimit)
         
         return Publishers.Sequence(sequence: batches)
             .flatMap { self.performDeleteBatch(tableName: tableName, recordIDs: $0) }
-            .reduce([String]()) { $0 + $1 }
+            .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
     
-    private func performDeleteBatch(tableName: String, recordIDs: [String]) -> AnyPublisher<[String], AirtableError> {
+    private func performDeleteBatch(tableName: String, recordIDs: [String]) -> AnyPublisher<[Record], AirtableError> {
         precondition(recordIDs.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
         
         let queryItems = recordIDs.map { URLQueryItem(name: "records[]", value: $0) }
@@ -254,7 +254,7 @@ public final class Airtable {
         
         return URLSession.shared.dataTaskPublisher(for: request)
             .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecord(data:))
+            .tryMap(responseDecoder.decodeBatchDeleteResponse(data:))
             .mapError(errorHander.mapError(_:))
             .eraseToAnyPublisher()
     }
