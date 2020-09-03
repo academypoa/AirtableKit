@@ -100,32 +100,19 @@ public final class Airtable {
     public func create(tableName: String, records: [Record]) -> AnyPublisher<[Record], AirtableError> {
         let batches = records.chunked(by: Self.batchLimit)
         
-        return Publishers.Sequence(sequence: batches)
-            .flatMap { self.performCreateBatch(tableName: tableName, records: $0) }
-            .reduce([Record](), +)
-            .eraseToAnyPublisher()
-    }
-    
-    private func performCreateBatch(tableName: String, records: [Record]) -> AnyPublisher<[Record], AirtableError> {
-        precondition(records.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
-        
-        var request = makeRequest(path: tableName)
-        request.httpMethod = "POST"
-        
-        do {
-            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecords(records, shouldAddID: false))
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        } catch {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, records])
-            return Fail(error: err).eraseToAnyPublisher()
+        let publisherForBatch = { (records: [Record]) in
+            self.performBatchRequest(
+                method: "POST",
+                tableName: tableName,
+                payload: self.requestEncoder.encodeRecords(records, shouldAddID: false),
+                decoder: self.responseDecoder.decodeRecords(data:)
+            )
         }
         
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecords(data:))
-            .mapError(errorHander.mapError(_:))
+        return Publishers.Sequence(sequence: batches)
+            .flatMap(publisherForBatch)
+            .reduce([Record](), +)
             .eraseToAnyPublisher()
-        
     }
     
     // MARK: - Update records on a table
@@ -176,30 +163,18 @@ public final class Airtable {
     public func update(tableName: String, records: [Record], replacesEntireRecords: Bool = false) -> AnyPublisher<[Record], AirtableError> {
         let batches = records.chunked(by: Self.batchLimit)
         
-        return Publishers.Sequence(sequence: batches)
-            .flatMap { self.performUpdateBatch(tableName: tableName, records: $0, replacesEntireRecords: replacesEntireRecords) }
-            .reduce([Record](), +)
-            .eraseToAnyPublisher()
-    }
-    
-    private func performUpdateBatch(tableName: String, records: [Record], replacesEntireRecords: Bool) -> AnyPublisher<[Record], AirtableError> {
-        precondition(records.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
-        
-        var request = makeRequest(path: tableName)
-        request.httpMethod = replacesEntireRecords ? "PUT" : "PATCH"
-        
-        do {
-            request.httpBody = try requestEncoder.asData(json: requestEncoder.encodeRecords(records, shouldAddID: true))
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        } catch {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, records])
-            return Fail(error: err).eraseToAnyPublisher()
+        let publisherForBatch = { (records: [Record]) in
+            self.performBatchRequest(
+                method: replacesEntireRecords ? "PUT" : "PATCH",
+                tableName: tableName,
+                payload: self.requestEncoder.encodeRecords(records, shouldAddID: true),
+                decoder: self.responseDecoder.decodeRecords(data:)
+            )
         }
         
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeRecords(data:))
-            .mapError(errorHander.mapError(_:))
+        return Publishers.Sequence(sequence: batches)
+            .flatMap(publisherForBatch)
+            .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
     
@@ -233,35 +208,64 @@ public final class Airtable {
     ///   - tableName: Name of the table where the records are.
     ///   - recordIDs: IDs of the records to be deleted.
     public func delete(tableName: String, recordIDs: [String]) -> AnyPublisher<[Record], AirtableError> {
-        let batches = recordIDs.chunked(by: Self.batchLimit)
+        let batches = recordIDs.map { URLQueryItem(name: "records[]", value: $0) }
+            .chunked(by: Self.batchLimit)
         
-        return Publishers.Sequence(sequence: batches)
-            .flatMap { self.performDeleteBatch(tableName: tableName, recordIDs: $0) }
-            .reduce([Record](), +)
-            .eraseToAnyPublisher()
-    }
-    
-    private func performDeleteBatch(tableName: String, recordIDs: [String]) -> AnyPublisher<[Record], AirtableError> {
-        precondition(recordIDs.count <= Self.batchLimit, "batch operations support a maximum of \(Self.batchLimit) records at a time")
-        
-        let queryItems = recordIDs.map { URLQueryItem(name: "records[]", value: $0) }
-        guard var request = makeRequest(path: tableName, queryItems: queryItems) else {
-            let err = AirtableError.invalidParameters(operation: #function, parameters: [tableName, recordIDs])
-            return Fail(error: err).eraseToAnyPublisher()
+        let publisherForBatch = { (queryItems: [URLQueryItem]) in
+            self.performBatchRequest(
+                method: "DELETE",
+                tableName: tableName,
+                queryItems: queryItems,
+                decoder: self.responseDecoder.decodeBatchDeleteResponse(data:)
+            )
         }
         
-        request.httpMethod = "DELETE"
-        
-        return URLSession.shared.dataTaskPublisher(for: request)
-            .tryMap(errorHander.mapResponse(_:))
-            .tryMap(responseDecoder.decodeBatchDeleteResponse(data:))
-            .mapError(errorHander.mapError(_:))
+        return Publishers.Sequence(sequence: batches)
+            .flatMap(publisherForBatch)
+            .reduce([Record](), +)
             .eraseToAnyPublisher()
     }
     
 }
 
 extension Airtable {
+    private func performBatchRequest<T>(
+        method: String,
+        tableName: String,
+        queryItems: [URLQueryItem]? = nil,
+        payload: [String: Any]? = nil,
+        decoder: @escaping (Data) throws -> T
+    ) -> AnyPublisher<T, AirtableError> {
+        
+        // prepare the request
+        guard var request = makeRequest(path: tableName, queryItems: queryItems) else {
+            let error = AirtableError.invalidParameters(operation: #function,
+                                                        parameters: [method, tableName, queryItems as Any, payload as Any])
+            return Fail(error: error).eraseToAnyPublisher()
+        }
+        
+        request.httpMethod = method
+        
+        // set the payload
+        if let payload = payload {
+            do {
+                request.httpBody = try requestEncoder.asData(json: payload)
+                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            } catch {
+                let err = AirtableError.invalidParameters(operation: #function,
+                                                          parameters: [method, tableName, queryItems as Any, payload])
+                return Fail(error: err).eraseToAnyPublisher()
+            }
+        }
+        
+        // perform the request
+        return URLSession.shared.dataTaskPublisher(for: request)
+            .tryMap(errorHander.mapResponse(_:))
+            .tryMap(decoder)
+            .mapError(errorHander.mapError(_:))
+            .eraseToAnyPublisher()
+    }
+    
     private func makeRequest(path: String) -> URLRequest {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
