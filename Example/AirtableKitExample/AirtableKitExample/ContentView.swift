@@ -33,6 +33,7 @@ final class AppState: ObservableObject, Equatable {
 }
 
 extension AppState {
+    // Standard URLs
     static let happyUrlStringUrl = "https://www.treehugger.com/thmb/4ahsE_-KAyHY9GFQdwVvny0_SaA=/735x0/__opt__aboutcom__coeus__resources__content_migration__mnn__images__2013__09__bigbabysmileonetooth-7f0e2c7898c54124a6a3472938177a95.jpg"
     static let sadUrlStringUrl = "https://minutohm.files.wordpress.com/2013/11/sad-baby.jpg?w=604"
     static let placeholderStringUrl = "https://placehold.it/300"
@@ -56,9 +57,6 @@ struct ContentView: View {
         
     /// The Airtable Record
     @State private var record: AirtableKit.Record? = nil
-    
-    /// A boolean indicating whether there are changes to send to airtable
-    @State private var loadedState = AppState()
     
     // MARK: - State
     @ObservedObject var state = AppState()
@@ -108,17 +106,17 @@ struct ContentView: View {
                 Spacer()
                 
                 Text("Airtable updated time \n\(self.state.updatedTime)")
-                    .font(.system(size: 9, weight: .regular))
+                    .font(.system(size: 10, weight: .regular))
                 
                 Text("Airtable created time \n\(self.state.createdTime)")
-                    .font(.system(size: 9, weight: .regular))
+                    .font(.system(size: 10, weight: .regular))
             }
             .padding()
             .navigationBarTitle("Example")
             .navigationBarItems(
                 trailing: Button(action: updateInAirtable) {
                     Text("Send to Airtable")
-                }.disabled(state != loadedState)
+                }
             )
         }
         .onAppear(perform: loadItems)
@@ -138,37 +136,31 @@ struct ContentView: View {
             .flatMap{ _ in airtable.list(tableName: self.tableName) }
             .replaceError(with: [])
             .receive(on: DispatchQueue.main)
-            .sink { records in
-                if let record = records.first {
-                    self.record = record
-                    self.update(with: record)
-                }
-            }.store(in: &subscriptions)
+            .compactMap(\.first)
+            .sink(receiveValue: update(with:))
+            .store(in: &subscriptions)
         
     }
     private func loadItems() {
         let airtable = Airtable(baseID: apiBaseId, apiKey: apiKey)
+        let fields = ["name", "age", "image", "updatedTime", "isCool"]
         airtable
-            .list(tableName: tableName, fields: ["name", "age", "image", "updatedTime", "isCool"])
-            .print()
+            .list(tableName: tableName, fields: fields)
             .replaceError(with: [])
             .receive(on: DispatchQueue.main)
-            .sink { records in
-                if let record = records.first {
-                    self.record = record
-                    self.update(with: record)
-                }
-        }.store(in: &subscriptions)
+            .compactMap(\.first)
+            .sink(receiveValue: update(with:))
+            .store(in: &subscriptions)
     }
     
     private func update(with record: AirtableKit.Record) {
+        self.record = record
         self.state.name = record.fields["name"] as? String ?? ""
         self.state.age = record.fields["age"] as? Int ?? 0
         self.state.isCool = record.fields["isCool"] as? Bool ?? false
         self.state.createdTime = record.createdTime ?? Date()
         self.state.updatedTime = record.fields["updatedTime"] as? Date ?? Date()
         self.state.imageUrl = record.attachments["image"]?.first?.url ?? URL(string: AppState.placeholderStringUrl)!
-        self.loadedState = self.state
     }
 }
 
