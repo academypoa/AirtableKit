@@ -4,7 +4,6 @@ import Combine
 import URLImage
 
 
-/// The applicaiton state
 /// This examples requires that your Airtable base possesses the following fields
 ///
 /// `name` : A single-line or multi-line text
@@ -13,16 +12,9 @@ import URLImage
 /// `updatedTime`: A date field
 /// `image`: An attachment field
 ///
+
+/// The applicaiton state
 final class AppState: ObservableObject, Equatable {
-    
-    static func == (lhs: AppState, rhs: AppState) -> Bool {
-        lhs.name == rhs.name &&
-        lhs.age == rhs.age &&
-        lhs.isCool == rhs.isCool &&
-        lhs.createdTime == rhs.createdTime &&
-        lhs.updatedTime == rhs.updatedTime &&
-        lhs.imageUrl == rhs.imageUrl
-    }
     
     @Published var name: String = "Nicolas"
     @Published var age: Int = 25
@@ -30,6 +22,16 @@ final class AppState: ObservableObject, Equatable {
     @Published var createdTime: Date = Date()
     @Published var updatedTime: Date = Date()
     @Published var imageUrl: URL = URL(string: "https://placehold.it/300")!
+    
+    // MARK: - Equatable
+    static func == (lhs: AppState, rhs: AppState) -> Bool {
+        lhs.name == rhs.name &&
+            lhs.age == rhs.age &&
+            lhs.isCool == rhs.isCool &&
+            lhs.createdTime == rhs.createdTime &&
+            lhs.updatedTime == rhs.updatedTime &&
+            lhs.imageUrl == rhs.imageUrl
+    }
 }
 
 extension AppState {
@@ -53,14 +55,17 @@ struct ContentView: View {
     private let tableName: String = "YOUR_TABLE_NAME"
     
     /// The subscriptions of this view
-    @State private var subscriptions: Set<AnyCancellable> = []
-        
+    @State
+    private var subscriptions: Set<AnyCancellable> = []
+    
     /// The Airtable Record
-    @State private var record: AirtableKit.Record? = nil
+    @State
+    private var record: AirtableKit.Record? = nil
     
     // MARK: - State
-    @ObservedObject var state = AppState()
-
+    @ObservedObject
+    private var state = AppState()
+    
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 8) {
@@ -90,7 +95,7 @@ struct ContentView: View {
                     Text("year\(self.state.age != 1 ? "s" : "") old")
                 }
                 .font(.title)
-
+                
                 
                 HStack {
                     Toggle("Am I cool?", isOn: self.$state.isCool)
@@ -114,9 +119,7 @@ struct ContentView: View {
             .padding()
             .navigationBarTitle("Example")
             .navigationBarItems(
-                trailing: Button(action: updateInAirtable) {
-                    Text("Send to Airtable")
-                }
+                trailing: Button(action: updateInAirtable) { Text("Send to Airtable") }
             )
         }
         .onAppear(perform: loadItems)
