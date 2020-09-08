@@ -14,6 +14,8 @@ func readFile(_ resource: String?, _ ext: String?) -> Data {
         return Mocks.singleRecordDelete.data(using: .utf8)!
     case "single_record_delete_fail":
         return Mocks.singleRecordDeleteFail.data(using: .utf8)!
+    case "multiple_records_delete":
+        return Mocks.multipleRecordsDelete.data(using: .utf8)!
     default:
         fatalError("unknown resouce: \(resource!)")
     }
