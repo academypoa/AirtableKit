@@ -46,13 +46,13 @@ struct ContentView: View {
     // MARK: - Private
     
     /// Generate this at https://api.airtable.com
-    private let apiKey = "YOUR_API_KEEY"
+    private let apiKey = "API_KEY"
     
     /// The id of the base in Airtable
-    private let apiBaseId = "YOUR_BASE_ID"
+    private let apiBaseId = "BASE_ID"
     
     /// The name of the table
-    private let tableName: String = "YOUR_TABLE_NAME"
+    private let tableName: String = "TABLE_NAME"
     
     /// The subscriptions of this view
     @State
@@ -66,6 +66,13 @@ struct ContentView: View {
     @ObservedObject
     private var state = AppState()
     
+    /// The airtable base we will be accessing
+    private var airtable: Airtable
+    
+    // MARK: - Init
+    init() { self.airtable = Airtable(baseID: apiBaseId, apiKey: apiKey) }
+    
+    // MARK: - Body
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 8) {
@@ -125,9 +132,18 @@ struct ContentView: View {
         .onAppear(perform: loadItems)
     }
     
+    /// A publisher that lists the items from Airtable
+    private var listFromAirtablePublisher: AnyPublisher<AirtableKit.Record, AirtableError> {
+        airtable
+            .list(tableName: tableName, fields: ["name", "age", "image", "updatedTime", "isCool"])
+            .receive(on: DispatchQueue.main)
+            .compactMap(\.first)
+            .eraseToAnyPublisher()
+    }
+    
+    /// Sends local data to Airtable
     private func updateInAirtable() {
         guard var record = self.record else { return }
-        let airtable = Airtable(baseID: apiBaseId, apiKey: apiKey)
         record.fields["name"] = state.name
         record.fields["isCool"] = state.isCool
         record.fields["age"] = state.age
@@ -136,26 +152,23 @@ struct ContentView: View {
         record.attachments["image"] = [.init(url: URL(string: urlString)!)]
         
         airtable.update(tableName: tableName, record: record)
-            .flatMap{ _ in airtable.list(tableName: self.tableName) }
-            .replaceError(with: [])
-            .receive(on: DispatchQueue.main)
-            .compactMap(\.first)
+            .flatMap{ _ in self.listFromAirtablePublisher }
+            .replaceError(with: .init(fields: [:]))
             .sink(receiveValue: update(with:))
             .store(in: &subscriptions)
         
     }
+    
+    /// Loads the items stored in Airtable
     private func loadItems() {
-        let airtable = Airtable(baseID: apiBaseId, apiKey: apiKey)
-        let fields = ["name", "age", "image", "updatedTime", "isCool"]
-        airtable
-            .list(tableName: tableName, fields: fields)
-            .replaceError(with: [])
-            .receive(on: DispatchQueue.main)
-            .compactMap(\.first)
+        self.listFromAirtablePublisher
+            .replaceError(with: .init(fields: [:]))
             .sink(receiveValue: update(with:))
             .store(in: &subscriptions)
     }
     
+    /// Updates local state using the provided Record
+    /// - Parameter record: The record from which to get the data
     private func update(with record: AirtableKit.Record) {
         self.record = record
         self.state.name = record.fields["name"] as? String ?? ""
@@ -167,6 +180,7 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Preview
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
