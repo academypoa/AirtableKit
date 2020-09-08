@@ -182,7 +182,7 @@ public final class Airtable {
 
 extension Airtable {
     
-    private func performRequest<T>(_ request: URLRequest?, decoder: @escaping (Data) throws -> T) -> AnyPublisher<T, AirtableError> {
+    func performRequest<T>(_ request: URLRequest?, decoder: @escaping (Data) throws -> T) -> AnyPublisher<T, AirtableError> {
         guard let urlRequest = request else {
             let error = AirtableError.invalidParameters(operation: #function, parameters: [request as Any])
             return Fail(error: error).eraseToAnyPublisher()
@@ -195,7 +195,7 @@ extension Airtable {
             .eraseToAnyPublisher()
     }
     
-    private func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil) -> URLRequest? {
+    func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil) -> URLRequest? {
         let url: URL?
         
         if let queryItems = queryItems {
