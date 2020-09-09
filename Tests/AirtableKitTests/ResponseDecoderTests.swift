@@ -30,7 +30,7 @@ class ResponseDecoderTests: QuickSpec {
             }
             
             context("decoding a single record") {
-                let data = readFile("single_record", "json")
+                let data = readFile("single_record.json")
                 var record: Record!
                 
                 beforeEach {
@@ -55,7 +55,7 @@ class ResponseDecoderTests: QuickSpec {
             
             context("decoding a delete single record response") {
                 context("when it succeeds") {
-                    let data = readFile("single_record_delete", "json")
+                    let data = readFile("single_record_delete.json")
                     var record: Record!
                     
                     beforeEach {
@@ -69,7 +69,7 @@ class ResponseDecoderTests: QuickSpec {
                 }
                 
                 context("when it fails") {
-                    let data = readFile("single_record_delete_fail", "json")
+                    let data = readFile("single_record_delete_fail.json")
                     var record: Record!
                     var err: AirtableError!
                     
@@ -91,7 +91,7 @@ class ResponseDecoderTests: QuickSpec {
             
             context("decoding batch delete responses") {
                 it("handles a valid response") {
-                    let input = readFile("multiple_records_delete", "json")
+                    let input = readFile("multiple_records_delete.json")
                     let output = try decoder.decodeBatchDeleteResponse(data: input)
                     
                     expect(output).to(haveCount(3))
@@ -115,7 +115,7 @@ class ResponseDecoderTests: QuickSpec {
             }
             
             context("decoding multiple records") {
-                let data = readFile("multiple_records", "json")
+                let data = readFile("multiple_records.json")
                 var records: [Record]!
                 
                 beforeEach {
