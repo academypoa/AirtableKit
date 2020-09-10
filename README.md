@@ -47,9 +47,19 @@ let publisher = airtable.list(tableName: tableName,
         
 ```
 
+or get an individual record, providing its id.
+
+
+``` swift
+
+let publisher = airtable.get(tableName: tableName, 
+                             recordID: "YOUR_AIRTABLE_RECORD_ID")
+        
+```
+
 ## Creating records
 
-You can also create new records.
+You can also create a new record.
 
 ``` swift
 
@@ -65,9 +75,33 @@ let publisher = airtable.create(tableName: tableName, record: record)
 
 ```
 
+or multiple records.
+
+``` swift
+
+let fields: [[String: Any]] = [
+  [
+    "name" : "Nicolas",
+    "isCool" : true
+    "age" : 25,
+    "updatedTime" : Date()
+  ],
+  [
+    "name" : "Rafael",
+    "isCool" : true
+    "age" : 22,
+    "updatedTime" : Date()
+  ]
+]
+let records = fields.map{ Record(fields: fields) }
+
+let publisher = airtable.create(tableName: tableName, records: records)
+
+```
+
 ## Updating records
 
-Updating existing records.
+You can also updating an existing record.
 
 ``` swift
 let fields: [String: Any] = [
@@ -82,6 +116,30 @@ let publisher = airtable.update(tableName: tableName, record: record)
 
 ```
 
+or multiple records.
+
+``` swift
+
+let fields: [[String: Any]] = [
+  [
+    "name" : "Nicolas",
+    "isCool" : true
+    "age" : 25,
+    "updatedTime" : Date()
+  ],
+  [
+    "name" : "Rafael",
+    "isCool" : true
+    "age" : 22,
+    "updatedTime" : Date()
+  ]
+]
+let records = fields.map{ Record(fields: fields) }
+
+let publisher = airtable.update(tableName: tableName, records: records)
+
+```
+
 ## Deleting records
 
 And finally, you can also delete an existing record.
@@ -91,5 +149,13 @@ And finally, you can also delete an existing record.
 let record = Record(fields: [:], id: "YOUR_AIRTABLE_RECORD_ID")
 
 let publisher = airtable.delete(tableName: tableName, record: record)
+
+```
+
+or multiple records.
+
+``` swift
+
+let publisher = airtable.delete(tableName: tableName, recordsIDs: ["YOUR_AIRTABLE_RECORD_ID_1", "YOUR_AIRTABLE_RECORD_ID_2"])
 
 ```
