@@ -24,7 +24,9 @@
 
 `AirtableKit` can be installed using Swift Package Manager.
 
-To install `AirtableKit` using Swift Package Manager look for http://github.com/appledeveloperacademypucrs/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). See [Adding Package Dependencies to Your App](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app) for details.
+To install `AirtableKit` using Swift Package Manager look for http://github.com/appledeveloperacademypucrs/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). 
+
+See [Adding Package Dependencies to Your App](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app) for details.
 
 ## Usage
 
