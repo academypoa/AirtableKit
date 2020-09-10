@@ -6,6 +6,9 @@
 
 <!-- Current platform support -->
 ![Supported platform: iOS](https://img.shields.io/badge/iOS-lightgrey)
+![Language: Swift](https://img.shields.io/badge/swift-orange)
+
+
 <!-- Social Media -->
 [![Follow us](https://img.shields.io/twitter/follow/_nicolaspn?style=social)](https://twitter.com/intent/follow?screen_name=_nicolaspn)
 [![Follow us](https://img.shields.io/twitter/follow/rafaelruwer?style=social)](https://twitter.com/intent/follow?screen_name=rafaelruwer)
@@ -35,7 +38,7 @@ let airtable = Airtable(baseID: apiBaseId, apiKey: apiKey)
 
 ## Listing records
 
-You can list items in any Table in your base.
+Then, you can list items in any Table in your base.
 
 ``` swift
 
@@ -50,26 +53,43 @@ You can also create new records.
 
 ``` swift
 
-// TODO
+let fields: [String: Any] = [
+  "name" : "Nicolas",
+  "isCool" : true
+  "age" : 25,
+  "updatedTime" : Date()
+]
+let record = Record(fields: fields)
+
+let publisher = airtable.create(tableName: tableName, record: record)
 
 ```
 
 ## Updating records
 
-Updating existing records is possible
+Updating existing records.
 
 ``` swift
+let fields: [String: Any] = [
+  "name" : "Nicolas",
+  "isCool" : true
+  "age" : 25,
+  "updatedTime" : Date()
+]
+let record = Record(fields: fields, id: "YOUR_AIRTABLE_RECORD_ID")
 
-// TODO
+let publisher = airtable.update(tableName: tableName, record: record)
 
 ```
 
 ## Deleting records
 
-Finally, you can also dele an existing record.
+And finally, you can also delete an existing record.
 
 ``` swift
 
-// TODO
+let record = Record(fields: [:], id: "YOUR_AIRTABLE_RECORD_ID")
+
+let publisher = airtable.delete(tableName: tableName, record: record)
 
 ```
