@@ -5,8 +5,9 @@
 <!-- [Supported platform: iOS, macOS, tvOS, watchOS](https://img.shields.io/badge/platform-iOS%2C%20macOS%2C%20tvOS%2C%20watchOS-lightgrey) -->
 
 <!-- Current platform support -->
-![Supported platform: iOS](https://img.shields.io/badge/iOS-lightgrey)
+![Supported platforms: iOS & macOS](https://img.shields.io/badge/platform-ios%20%7C%20macos-lightgrey)
 ![Language: Swift](https://img.shields.io/badge/swift-orange)
+![MIT License](https://img.shields.io/badge/license-MIT-brightgreen)
 
 
 <!-- Social Media -->
@@ -16,13 +17,18 @@
 `AirtableKit` is a 100% Swift framework to wrap the REST API provided by [Airtable](http://api.airtable.com/). The implementation fully leverages [Combine](https://developer.apple.com/documentation/combine) to handle asynchronous operations.
 
 ## Features
+
 - Standard CRUD operations;
 - Operation batching;
-- API Error forwarding;
+- API Error forwarding.
 
 ## Instalation
 
-`AirtableKit` can be installed using Swift Package Manager.
+`AirtableKit` only supports Swift Package Manager at the moment.
+
+```swift
+  .package(url: "http://github.com/appledeveloperacademypucrs/AirtableKit.git", .upToNextMajor(from: "1.0.0"))
+```
 
 To install `AirtableKit` using Swift Package Manager look for http://github.com/appledeveloperacademypucrs/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). 
 
@@ -38,18 +44,21 @@ let airtable = Airtable(baseID: apiBaseId, apiKey: apiKey)
 
 ```
 
-## Listing records
+### Listing records
 
-Then, you can list items in any Table in your base.
+Then, you can list items in any table in your base:
 
 ``` swift
 
-let publisher = airtable.list(tableName: tableName, 
-                              fields: ["name", "age", "image", "updatedTime", "isCool"])
+let publisher = airtable.list(tableName: tableName)
+
+// to get only some fields
+let publisher = airtable.list(tableName: tableName,
+                              fields: ["name", "age", "isCool"])
         
 ```
 
-or get an individual record, providing its id.
+or get an individual record, providing its ID:
 
 
 ``` swift
@@ -59,9 +68,9 @@ let publisher = airtable.get(tableName: tableName,
         
 ```
 
-## Creating records
+### Creating records
 
-You can also create a new record.
+You can also create a new record:
 
 ``` swift
 
@@ -71,13 +80,14 @@ let fields: [String: Any] = [
   "age" : 25,
   "updatedTime" : Date()
 ]
+
 let record = Record(fields: fields)
 
 let publisher = airtable.create(tableName: tableName, record: record)
 
 ```
 
-or multiple records.
+or multiple records:
 
 ``` swift
 
@@ -95,15 +105,16 @@ let fields: [[String: Any]] = [
     "updatedTime" : Date()
   ]
 ]
-let records = fields.map{ Record(fields: fields) }
+
+let records = fields.map { Record(fields: $0) }
 
 let publisher = airtable.create(tableName: tableName, records: records)
 
 ```
 
-## Updating records
+### Updating records
 
-You can also updating an existing record.
+You can also update an existing record:
 
 ``` swift
 let fields: [String: Any] = [
@@ -112,39 +123,40 @@ let fields: [String: Any] = [
   "age" : 25,
   "updatedTime" : Date()
 ]
+
 let record = Record(fields: fields, id: "YOUR_AIRTABLE_RECORD_ID")
 
 let publisher = airtable.update(tableName: tableName, record: record)
 
 ```
 
-or multiple records.
+or multiple records:
 
 ``` swift
 
-let fields: [[String: Any]] = [
-  [
+let records = [
+  Record(fields: [
     "name" : "Nicolas",
     "isCool" : true
     "age" : 25,
     "updatedTime" : Date()
-  ],
-  [
+  ], id: "YOUR_AIRTABLE_RECORD_ID_1"),
+  
+  Record(fields: [
     "name" : "Rafael",
     "isCool" : true
     "age" : 22,
     "updatedTime" : Date()
-  ]
+  ], id: "YOUR_AIRTABLE_RECORD_ID_2")
 ]
-let records = fields.map{ Record(fields: fields) }
-
+  
 let publisher = airtable.update(tableName: tableName, records: records)
 
 ```
 
-## Deleting records
+### Deleting records
 
-And finally, you can also delete an existing record.
+And finally, you can also delete an existing record:
 
 ``` swift
 
@@ -154,7 +166,7 @@ let publisher = airtable.delete(tableName: tableName, record: record)
 
 ```
 
-or multiple records.
+or multiple records:
 
 ``` swift
 
