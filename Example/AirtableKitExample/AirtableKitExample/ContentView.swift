@@ -41,6 +41,8 @@ extension AppState {
     static let placeholderStringUrl = "https://placehold.it/300"
 }
 
+// TODO: Add comment to how to setup example base
+
 struct ContentView: View {
     
     // MARK: - Private
@@ -171,11 +173,11 @@ struct ContentView: View {
     /// - Parameter record: The record from which to get the data
     private func update(with record: AirtableKit.Record) {
         self.record = record
-        self.state.name = record.fields["name"] as? String ?? ""
-        self.state.age = record.fields["age"] as? Int ?? 0
-        self.state.isCool = record.fields["isCool"] as? Bool ?? false
+        self.state.name = record.name ?? ""
+        self.state.age = record.age ?? 0
+        self.state.isCool = record.isCool ?? false
         self.state.createdTime = record.createdTime ?? Date()
-        self.state.updatedTime = record.fields["updatedTime"] as? Date ?? Date()
+        self.state.updatedTime = record.updatedTime ?? Date()
         self.state.imageUrl = record.attachments["image"]?.first?.url ?? URL(string: AppState.placeholderStringUrl)!
     }
 }
