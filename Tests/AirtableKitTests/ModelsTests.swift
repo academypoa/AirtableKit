@@ -5,7 +5,7 @@ import Nimble
 
 @testable import AirtableKit
 
-class ModelsTest: QuickSpec {
+class ModelsTests: QuickSpec {
     override func spec() {
         describe("a record") {
             var record: Record!
