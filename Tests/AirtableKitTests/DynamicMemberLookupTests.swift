@@ -3,7 +3,7 @@ import Foundation
 import Quick
 import Nimble
 
-@testable import AirtableKit
+import AirtableKit
 
 final class DMLTest: QuickSpec {
     
