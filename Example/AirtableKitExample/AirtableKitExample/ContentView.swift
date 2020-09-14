@@ -12,7 +12,9 @@ import URLImage
 /// `updatedTime`: A date field
 /// `image`: An attachment field
 ///
-
+///  Check the `base-setup.png` file to see how the table should appear in Airtable.
+///
+///
 /// The applicaiton state
 final class AppState: ObservableObject, Equatable {
     
@@ -40,8 +42,6 @@ extension AppState {
     static let sadUrlStringUrl = "https://minutohm.files.wordpress.com/2013/11/sad-baby.jpg?w=604"
     static let placeholderStringUrl = "https://placehold.it/300"
 }
-
-// TODO: Add comment to how to setup example base
 
 struct ContentView: View {
     
