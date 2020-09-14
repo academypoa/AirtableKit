@@ -44,11 +44,6 @@ public struct Record {
 // MARK: - Dynamic Member Lookup
 extension Record {
     // Generic
-    public subscript<T>(dynamicMember member: String) -> T? {
-        if let anyValue = fields[member], let value = anyValue as? T {
-            return value
-        }
-        return nil
-    }
+    public subscript<T>(dynamicMember member: String) -> T? { fields[member] as? T }
 }
 
