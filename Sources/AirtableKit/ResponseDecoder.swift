@@ -8,7 +8,7 @@ final class ResponseDecoder {
     /// Date formatter used for writing dates to JSON objects
     static let formatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
         return formatter
     }()
     
@@ -75,7 +75,8 @@ final class ResponseDecoder {
         guard let id = json["id"] as? String else { throw AirtableError.missingRequiredFields("id") }
         guard let createdTimeString = json["createdTime"] as? String else { throw AirtableError.missingRequiredFields("createdTime") }
         guard let fields = json["fields"] as? [String: Any] else { throw AirtableError.missingRequiredFields("fields") }
-        guard let createdTime = Self.formatter.date(from: createdTimeString) else { throw AirtableError.dateDecodingError(createdTimeString)}
+        
+        let createdTime = Self.formatter.date(from: createdTimeString) ?? Date()
         
         // convert fields to possible attachments
         let attachments = fields.compactMapValues { value -> [Attachment]? in
