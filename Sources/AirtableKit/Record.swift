@@ -3,6 +3,7 @@ import Foundation
 /// An Airtable record (a line in a table).
 ///
 /// After saved, every record has an ID and a time of creation. These fields are valid only if the record was received from the Airtable API.
+@dynamicMemberLookup
 public struct Record {
     
     /// ID of the record.
@@ -39,3 +40,10 @@ public struct Record {
         self.attachments = attachments
     }
 }
+
+// MARK: - Dynamic Member Lookup
+extension Record {
+    // Generic
+    public subscript<T>(dynamicMember member: String) -> T? { fields[member] as? T }
+}
+

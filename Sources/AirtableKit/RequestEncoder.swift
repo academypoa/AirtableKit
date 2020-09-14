@@ -8,7 +8,8 @@ final class RequestEncoder {
     /// Encodes a `Record` as a JSON object.
     ///
     /// - Parameters:
-    ///   - shouldAddID: If `false`, doesn't adds the `"id"` field on the payload. Use this when updating a single record (when the payload must not contain the record's ID), for example.
+    ///   - shouldAddID: If `false`, doesn't adds the `"id"` field on the payload. Use this when updating a single record (when the payload must not
+    ///   contain the record's ID), for example.
     func encodeRecord(_ record: Record, shouldAddID: Bool = true) -> [String: Any] {
         var fields = record.fields.mapValues { value -> Any in
             // Attachment and [Attachment] on the `fields` property are still encoded
@@ -51,6 +52,15 @@ final class RequestEncoder {
         }
         
         return payload
+    }
+    
+    /// Encodes multiple records for creating and update.
+    ///
+    /// - Parameters:
+    ///   - shouldAddID: If `false`, doesn't adds the `"id"` field on the payload of each record. Use this when updating records (when the payload
+    ///   must not contain the record's ID), for example.
+    func encodeRecords(_ records: [Record], shouldAddID: Bool = true) -> [String: Any] {
+        ["records": records.map { encodeRecord($0, shouldAddID: shouldAddID) }]
     }
     
     /// Encodes an `Attachment` as a JSON object.

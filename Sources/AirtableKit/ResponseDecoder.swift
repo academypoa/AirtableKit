@@ -8,7 +8,7 @@ final class ResponseDecoder {
     /// Date formatter used for writing dates to JSON objects
     static let formatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
         return formatter
     }()
     
@@ -19,9 +19,8 @@ final class ResponseDecoder {
         try _decodeRecord(json: asJSON(data: data))
     }
     
-    ///
     /// Decodes a delete response `Data` as a `Record`.
-    /// Since this operations does not have a `createdTime`, this field will holds the time in which the `record` was deleted
+    ///
     /// - Parameter data: Data returned from the request
     /// - Throws: `AirtableError`
     /// - Returns: The record containing the deletion operation payload.
@@ -37,6 +36,16 @@ final class ResponseDecoder {
         let records = json["records"] as? [[String: Any]] ?? []
         
         return try records.map(_decodeRecord)
+    }
+    
+    /// Decodes a JSON `Data` from the batch delete request as a list of `Record`s.
+    ///
+    /// - Throws: `AirtableError`.
+    func decodeBatchDeleteResponse(data: Data) throws -> [Record] {
+        let json = try asJSON(data: data)
+        let records = json["records"] as? [[String: Any]] ?? []
+        
+        return try records.map(_decodeDeleteResponse)
     }
     
     private func _decodeAttachment(json: [String: Any]) -> Attachment? {
@@ -58,7 +67,7 @@ final class ResponseDecoder {
         if !deleted {
             throw AirtableError.deleteOperationFailed(id)
         } else {
-            return Record(fields: ["deleted" : deleted], id: id, attachments: [:])
+            return Record(fields: ["deleted" : deleted], id: id)
         }
     }
     
