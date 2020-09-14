@@ -36,6 +36,7 @@ class RequestEncoderTests: QuickSpec {
                         "id": 9124,
                         "Name": "John Doe",
                         "url": URL(string: "https://apple.com")!,
+                        "links": [URL(string: "https://apple.com")!, URL(string: "https://google.com")!],
                         "multi": ["a", "lp"],
                         "bool_data": true,
                         "dbl_data": 1.2,
@@ -59,11 +60,12 @@ class RequestEncoderTests: QuickSpec {
                 }
                 
                 it("encodes the expected number of fields") {
-                    expect(fields.count) == 6
+                    expect(fields.count) == 7
                 }
                 
-                it("encodes an URL field as a string") {
+                it("encodes URLs as strings") {
                     expect(fields["url"] as? String) == "https://apple.com"
+                    expect(fields["links"] as? [String]) == ["https://apple.com", "https://google.com"]
                 }
                 
                 it("encodes the remaining fields correctly") {
@@ -126,7 +128,7 @@ class RequestEncoderTests: QuickSpec {
                     record = Record(fields: [
                         "single": attachment as Any,
                         "multiple": [attachment, attachment]
-                    ])
+                    ], attachments: ["many": [attachment]])
                     
                     encoded = encoder.encodeRecord(record)
                     fields = encoded["fields"] as? [String: Any] ?? [:]
@@ -139,6 +141,44 @@ class RequestEncoderTests: QuickSpec {
                 it("encodes the 'multiple' field correctly") {
                     let multiple = fields["multiple"] as? [Any]
                     expect(multiple?.count) == 2
+                }
+                
+                it("encodes the 'many' field correctly") {
+                    let many = fields["many"] as? [Any]
+                    expect(many).to(haveCount(1))
+                }
+            }
+            
+            context("encoding multiple records") {
+                var encoded: [String: Any]!
+                var records: [[String: Any]]!
+
+                beforeEach {
+                    let data = [
+                        Record(fields: ["name": "John"]),
+                        Record(fields: ["name": "Jane"])
+                    ]
+
+                    encoded = encoder.encodeRecords(data)
+                    records = encoded["records"] as? [[String: Any]]
+                }
+
+                it("encodes all records") {
+                    expect(records).to(haveCount(2))
+
+                    let first = records[0]["fields"] as? [String: Any]
+                    expect(first?["name"] as? String) == "John"
+
+                    let second = records[1]["fields"] as? [String: Any]
+                    expect(second?["name"] as? String) == "Jane"
+                }
+            }
+            
+            context("encoding a JSON object") {
+                it("encodes a valid object correctly") {
+                    let input = ["name": "john doe"]
+                    let output = #"{"name":"john doe"}"#.data(using: .utf8)
+                    expect(try encoder.asData(json: input)) == output
                 }
             }
         }

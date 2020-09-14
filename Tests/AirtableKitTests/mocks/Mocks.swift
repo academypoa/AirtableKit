@@ -71,4 +71,23 @@ enum Mocks {
     }
     """
     
+    static let multipleRecordsDelete: String = """
+    {
+        "records": [
+            {
+                "id": "rec1",
+                "deleted": true
+            },
+            {
+                "id": "rec2",
+                "deleted": true
+            },
+            {
+                "id": "rec3",
+                "deleted": true
+            }
+        ]
+    }
+    """
+    
 }

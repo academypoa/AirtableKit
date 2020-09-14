@@ -15,8 +15,20 @@ final class ErrorHandler {
         switch httpResponse.statusCode {
         case 200..<300:
             return response.data
+        case 400:
+            throw AirtableError.badRequest
+        case 401:
+            throw AirtableError.unauthorized
+        case 402:
+            throw AirtableError.paymentRequired
+        case 403:
+            throw AirtableError.forbidden
         case 404:
             throw AirtableError.notFound
+        case 413:
+            throw AirtableError.requestEntityTooLarge
+        case 422:
+            throw AirtableError.unprocessableEntity
         default:
             throw AirtableError.http(httpResponse: httpResponse, data: response.data)
         }
@@ -35,6 +47,6 @@ final class ErrorHandler {
             return .network(urlError)
         }
         
-        return .unknown
+        return .unknown(error)
     }
 }
