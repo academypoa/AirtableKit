@@ -8,7 +8,6 @@ import Nimble
 final class DMLTest: QuickSpec {
     
     static let date = Date()
-    static let url = URL(string: "https://via.placeholder.com/350x150")!
     
     override func spec() {
         describe("A record that supports Dynamic Member Lookup") {
