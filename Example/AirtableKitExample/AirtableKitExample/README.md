@@ -21,8 +21,8 @@ This examples requires that your Airtable base possesses the following fields:
 
 ![Airtable base](iOS-app.gif)
 
-## Output Airtable
+## Airtable interface
 
-![Airtable base](airtable-interface.png)
+![Airtable base](airtable-interface.gif)
 
 
