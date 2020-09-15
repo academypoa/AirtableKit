@@ -15,17 +15,17 @@ class DateFormatterTests: QuickSpec {
             
             context("extracting a correctly-formated string date") {
                 let stringDate = "2017-10-16T11:37:26.000Z"
-                var testingDate: Date!
+                var testingDaste: Date!
                 beforeEach {
                     testingDate = formatter.date(from: stringDate)!
                 }
                 
-                it("suceeds in extracting the correct date") {
+                it("succeeds in extracting the correct date") {
                     expect(testingDate) == date(day: 16, month: 10, year: 2017,
                                                 hour: 11, minute: 37, second: 26)
                 }
             }
-            context("extracign a string from a date") {
+            context("extracting a string from a date") {
                 let testingDate = date(day: 16, month: 10, year: 2017,
                                        hour: 11, minute: 37, second: 26)!
                 var string: String!
