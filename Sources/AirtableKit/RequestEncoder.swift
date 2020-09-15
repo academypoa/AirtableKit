@@ -29,7 +29,6 @@ final class RequestEncoder {
             // Date
             if let date = value as? Date {
                 let dateString = ResponseDecoder.formatter.string(from: date)
-                print("Date encoded: \(dateString)")
                 return dateString
             }
             
