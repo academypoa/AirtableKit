@@ -15,7 +15,7 @@ class DateFormatterTests: QuickSpec {
             
             context("extracting a correctly-formated string date") {
                 let stringDate = "2017-10-16T11:37:26.000Z"
-                var testingDaste: Date!
+                var testingDate: Date!
                 beforeEach {
                     testingDate = formatter.date(from: stringDate)!
                 }
