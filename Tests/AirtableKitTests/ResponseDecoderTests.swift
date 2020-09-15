@@ -39,7 +39,10 @@ class ResponseDecoderTests: QuickSpec {
                 
                 it("decodes the metadata correctly") {
                     expect(record.id) == "rec9jki"
-                    expect(record.createdTime) == date("2019-12-12T15:32:43Z")
+                    // 2019-12-12T15:32:43.000Z
+                    // 2019-12-12T15:32:43.000Z
+                    expect(record.createdTime) == date(day: 12, month: 12, year: 2019,
+                                                       hour: 15, minute: 32, second: 43)
                     expect(record.fields.count) == 4
                 }
                 

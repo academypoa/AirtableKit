@@ -1,7 +1,16 @@
 import Foundation
 
-func date(_ iso: String) -> Date? {
-    ISO8601DateFormatter().date(from: iso)
+func date(day: Int, month: Int, year: Int, hour: Int, minute: Int, second: Int) -> Date? {
+    var components = DateComponents()
+    
+    components.day = day
+    components.month = month
+    components.year = year
+    components.hour = hour
+    components.minute = minute
+    components.second = second
+    
+    return Calendar.current.date(from: components)!
 }
 
 func readFile(_ resource: String) -> Data {
