@@ -160,9 +160,7 @@ And finally, you can also delete an existing record:
 
 ``` swift
 
-let record = Record(fields: [:], id: "YOUR_AIRTABLE_RECORD_ID")
-
-let publisher = airtable.delete(tableName: tableName, record: record)
+let publisher = airtable.delete(tableName: tableName, recordID: "YOUR_AIRTABLE_RECORD_ID")
 
 ```
 

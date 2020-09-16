@@ -146,15 +146,10 @@ public final class Airtable {
     ///
     /// - Parameters:
     ///   - tableName: Name of the table where the record is
-    ///   - record: The record to delete.
+    ///   - recordID: The id of the record to delete.
     /// - Returns: A publisher with either the record which was deleted or an error
-    public func delete(tableName: String, record: Record) -> AnyPublisher<Record, AirtableError> {
-        guard let id = record.id else {
-            let error = AirtableError.missingRequiredFields("id")
-            return Fail<Record, AirtableError>(error: error).eraseToAnyPublisher()
-        }
-        
-        let request = buildRequest(method: "DELETE", path: "\(tableName)/\(id)")
+    public func delete(tableName: String, recordID: String) -> AnyPublisher<Record, AirtableError> {
+        let request = buildRequest(method: "DELETE", path: "\(tableName)/\(recordID)")
         return performRequest(request, decoder: responseDecoder.decodeDeleteResponse(data:))
     }
     
