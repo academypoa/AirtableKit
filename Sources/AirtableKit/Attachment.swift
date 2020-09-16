@@ -4,14 +4,14 @@ import Foundation
 ///
 /// After saved, every attachment has an ID and download URL.
 ///
-/// # Add attachments to records
+/// ### Add attachments to records
 ///
 /// To add an attachment, you shouldn't assign a value to the `id` field. You must set a URL to an image hosted somewhere on the Internet, because Airtable will
 /// download the image from this location.
 ///
 /// After the record is created/updated, you don't need to host the attachment anymore. Future requests will return an URL to the attachment hosted by Airtable.
 ///
-/// # Add attachments on a field with already-existing attachments
+/// ### Add attachments on a field with already-existing attachments
 ///
 /// When you update a record, if you want to keep the existing attachments for a field and add another attachment, you should send the existing attachment objects
 /// with only their ID set. If you send a URL, Airtable will download and update the attachment data.

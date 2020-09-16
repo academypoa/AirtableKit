@@ -171,3 +171,11 @@ or multiple records:
 let publisher = airtable.delete(tableName: tableName, recordsIDs: ["YOUR_AIRTABLE_RECORD_ID_1", "YOUR_AIRTABLE_RECORD_ID_2"])
 
 ```
+
+## Documentation
+
+Full documentation of the types and methods is [available on the wiki pages](https://github.com/appledeveloperacademypucrs/AirtableKit/wiki).
+
+## License
+
+MIT License.
