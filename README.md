@@ -27,7 +27,7 @@
 `AirtableKit` only supports Swift Package Manager at the moment.
 
 ```swift
-  .package(url: "http://github.com/appledeveloperacademypucrs/AirtableKit.git", .upToNextMajor(from: "1.0.0"))
+.package(url: "http://github.com/appledeveloperacademypucrs/AirtableKit.git", .upToNextMajor(from: "1.0.0"))
 ```
 
 To install `AirtableKit` using Swift Package Manager look for http://github.com/appledeveloperacademypucrs/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). 
