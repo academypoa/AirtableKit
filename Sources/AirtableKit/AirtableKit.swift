@@ -57,7 +57,7 @@ public final class Airtable {
         while self.offset.offset != nil {
             let nextRequest = buildRequest(method: "GET", path: tableName, queryItems: queryItems, offset: self.offset.offset!)
             requests.append(nextRequest!)
-            let newOffset = performRequest(request, decoder: responseDecoder.decodeRecords(data:))
+            let refreshOffset = performRequest(request, decoder: responseDecoder.decodeRecords(data:))
         }
         return Publishers.Sequence(sequence: requests)
             .flatMap { request in
