@@ -20,6 +20,9 @@ public final class Airtable {
     private let responseDecoder: ResponseDecoder = ResponseDecoder()
     private let errorHander: ErrorHandler = ErrorHandler()
     
+    /// Added shared delegate object to store offset values detected during list operations
+    private var offset = OffsetDelegate.shared
+    
     /// Initializes the client to work on a base using the specified API key.
     ///
     /// - Parameters:
@@ -42,6 +45,26 @@ public final class Airtable {
         let request = buildRequest(method: "GET", path: tableName, queryItems: queryItems)
         
         return performRequest(request, decoder: responseDecoder.decodeRecords(data:))
+    }
+    
+    /// Lists all records in tables that exceed Airtable's 100-record pagination limit by making use of offset values
+    public func listAllRecords(tableName: String, fields: [String] = []) -> AnyPublisher<[Record], AirtableError> {
+        let queryItems = fields.isEmpty ? nil : fields.map { URLQueryItem(name: "fields[]", value: $0) }
+        let request = buildRequest(method: "GET", path: tableName, queryItems: queryItems)
+        let offsetCheck = performRequest(request, decoder: responseDecoder.decodeRecords(data:))
+        var requests = [URLRequest]()
+        requests.append(request!)
+        while self.offset.offset != nil {
+            let nextRequest = buildRequest(method: "GET", path: tableName, queryItems: queryItems, offset: self.offset.offset!)
+            requests.append(nextRequest!)
+            let newOffset = performRequest(request, decoder: responseDecoder.decodeRecords(data:))
+        }
+        return Publishers.Sequence(sequence: requests)
+            .flatMap { request in
+                self.performRequest(request, decoder: self.responseDecoder.decodeRecords(data:))
+            }
+            .reduce([Record](), +)
+            .eraseToAnyPublisher()
     }
     
     /// Gets a single record in a table.
@@ -190,10 +213,15 @@ extension Airtable {
             .eraseToAnyPublisher()
     }
     
-    func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil) -> URLRequest? {
+    func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil, offset: String? = nil) -> URLRequest? {
         let url: URL?
+        var parameters = queryItems ?? [URLQueryItem]()
         
-        if let queryItems = queryItems {
+        /// Added parameter for incorporating offset values to method
+        if let offset = offset {
+            parameters.append(URLQueryItem(name: "offset", value: offset))
+        }
+        if !parameters.isEmpty {
             var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)
             components?.queryItems = queryItems
             url = components?.url

@@ -4,6 +4,7 @@ import Foundation
 ///
 /// Converts JSON objects to `Record`s and `Attachment`s.
 final class ResponseDecoder {
+    let delegate = OffsetDelegate.shared
     
     /// Date formatter used for writing dates to JSON objects
     static let formatter: DateFormatter = {
@@ -35,6 +36,11 @@ final class ResponseDecoder {
         let json = try asJSON(data: data)
         let records = json["records"] as? [[String: Any]] ?? []
         
+    /// Added parsing of offset value if present
+        let offset = json["offset"] as? String ?? nil
+       
+    /// Added storage of offset value in shared delegate object
+        self.delegate.offset = offset
         return try records.map(_decodeRecord)
     }
     
