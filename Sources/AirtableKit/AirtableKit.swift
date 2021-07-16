@@ -21,7 +21,9 @@ public final class Airtable {
     
     private static let batchLimit: Int = 10
     private static let airtableURL: URL = URL(string: "https://api.airtable.com/v0")!
-    private var baseURL: URL { Self.airtableURL.appendingPathComponent(baseID) }
+    private var baseURL: URL {
+         Self.airtableURL.appendingPathComponent(baseID)
+    }
     
     private let requestEncoder: RequestEncoder = RequestEncoder()
     private let responseDecoder: ResponseDecoder = ResponseDecoder()
@@ -32,7 +34,7 @@ public final class Airtable {
     /// - Parameters:
     ///   - baseID: The ID of the base manipulated by the client.
     ///   - apiKey: The API key of the user manipulating the base.
-    public init(baseID: String, apiKey: String) {
+    public init(baseID: String, apiKey: String ) {
         self.baseID = baseID
         self.apiKey = apiKey
     }
@@ -60,9 +62,15 @@ public final class Airtable {
     ///
     /// It works, with no error checking though
     
-    private func loadPage( tableName: String, fields: [String] = [], withOffset offset: String?) -> AnyPublisher<AirtableResponse, AirtableError>  {
+    private func loadPage( tableName: String, fields: [String] = [], view: String? = nil, withOffset offset: String?) -> AnyPublisher<AirtableResponse, AirtableError>  {
       // this would be the individual network call
-        let queryItems = fields.isEmpty ? nil : fields.map { URLQueryItem(name: "fields[]", value: $0) }
+        var queryItems = fields.isEmpty ? nil : fields.map { URLQueryItem(name: "fields[]", value: $0) }
+        if queryItems != nil {
+            if let v = view {
+                let vqi = URLQueryItem(name: "view", value: v)
+                queryItems?.insert(vqi, at: 0)
+            }
+        }
         let request = buildRequest(method: "GET", path: tableName, queryItems: queryItems , offset: offset )
         
         guard let urlRequest = request else {
@@ -77,13 +85,14 @@ public final class Airtable {
             .eraseToAnyPublisher()
     }
 
-    public func listAllRecords(tableName: String, fields: [String] = []) -> AnyPublisher<[Record], AirtableError> {
+    @available(iOS 14.0, *)
+    public func listAllRecords(tableName: String, fields: [String] = [], view: String? = nil) -> AnyPublisher<[Record], AirtableError> {
         
         let pageOffsetPublisher = CurrentValueSubject<String?, Never>(nil)
 
         return pageOffsetPublisher
           .flatMap({ offset in
-            return self.loadPage( tableName: tableName, fields: fields,  withOffset: offset)
+            return self.loadPage( tableName: tableName, fields: fields, view: view, withOffset: offset)
           })
           .handleEvents(receiveOutput: { (response: AirtableResponse) in
             if response.offset != nil {
@@ -247,14 +256,11 @@ extension Airtable {
     func buildRequest(method: String, path: String, queryItems: [URLQueryItem]? = nil, payload: [String: Any]? = nil, offset: String? = nil) -> URLRequest? {
         let url: URL?
         var parameters = queryItems ?? [URLQueryItem]()
-        var test = [Int()]
         
         /// Added parameter for incorporating offset values to method
         if let off = offset {
             let qi = URLQueryItem(name: "offset", value: off)
             parameters.insert( qi, at: 0)
-            test.insert(2, at: 0)
-            test.insert(3, at: 0)
             //(URLQueryItem(name: "offset", value: offset))
         }
         if !parameters.isEmpty {
