@@ -21,6 +21,7 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "AirtableKitTests",
-            dependencies: ["AirtableKit", "Quick", "Nimble", .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs")]),
+            dependencies: ["AirtableKit", "Quick", "Nimble", .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs")],
+            resources: [.copy("Resources")]),
     ]
 )
