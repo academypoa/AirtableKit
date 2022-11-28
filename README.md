@@ -27,10 +27,10 @@
 `AirtableKit` only supports Swift Package Manager at the moment.
 
 ```swift
-.package(url: "http://github.com/appledeveloperacademypucrs/AirtableKit.git", .upToNextMajor(from: "1.0.0"))
+.package(url: "http://github.com/academypoa/AirtableKit.git", .upToNextMajor(from: "1.0.0"))
 ```
 
-To install `AirtableKit` using Swift Package Manager look for http://github.com/appledeveloperacademypucrs/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). 
+To install `AirtableKit` using Swift Package Manager look for http://github.com/academypoa/AirtableKit.git in Xcode (*File/Swift Packages/Add Package Dependency...*). 
 
 See [Adding Package Dependencies to Your App](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app) for details.
 
@@ -174,7 +174,7 @@ let publisher = airtable.delete(tableName: tableName, recordsIDs: ["YOUR_AIRTABL
 
 ## Documentation
 
-Full documentation of the types and methods is [available on the wiki pages](https://github.com/appledeveloperacademypucrs/AirtableKit/wiki).
+Full documentation of the types and methods is [available on the wiki pages](https://github.com/academypoa/AirtableKit/wiki).
 
 ## License
 

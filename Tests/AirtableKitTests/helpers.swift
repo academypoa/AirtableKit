@@ -14,35 +14,17 @@ func date(day: Int, month: Int, year: Int, hour: Int, minute: Int, second: Int) 
 }
 
 func readFile(_ resource: String) -> Data {
-    switch resource {
-    case "multiple_records.json":
-        return Mocks.multipleRecords.data(using: .utf8)!
-    case "single_record.json":
-        return Mocks.singleRecord.data(using: .utf8)!
-    case "single_record_delete.json":
-        return Mocks.singleRecordDelete.data(using: .utf8)!
-    case "single_record_delete_fail.json":
-        return Mocks.singleRecordDeleteFail.data(using: .utf8)!
-    case "multiple_records_delete.json":
-        return Mocks.multipleRecordsDelete.data(using: .utf8)!
-    default:
-        fatalError("unknown resouce: \(resource)")
+    let components = resource.components(separatedBy: ".")
+    let name = components.dropLast().joined(separator: ".")
+    let ext = components.last
+    
+    guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
+        fatalError("Unknown resource: \(resource)")
     }
     
-    // TODO: fix when we start using swift 5.3 toolchain
-//    let components = resource.components(separatedBy: ".")
-//    let name = components.dropLast().joined(separator: ".")
-//    let ext = components.last
-//
-//    class _Class {}
-//
-//    guard let url = Bundle(for: _Class.self).url(forResource: resource, withExtension: ext) else {
-//        fatalError("unknown resource: \(resource ?? "").\(ext ?? "")")
-//    }
-//
-//    do {
-//        return try Data(contentsOf: url)
-//    } catch {
-//        fatalError("failed to read data for resource at \(url)")
-//    }
+    do {
+        return try Data(contentsOf: url)
+    } catch {
+        fatalError("Failed to read data for resource at \(url)")
+    }
 }
