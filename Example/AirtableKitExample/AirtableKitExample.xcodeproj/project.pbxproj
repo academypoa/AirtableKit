@@ -380,7 +380,7 @@
 		};
 		0CC5E00025002D4C00845CD9 /* XCRemoteSwiftPackageReference "AirtableKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git@github.com:appledeveloperacademypucrs/AirtableKit.git";
+			repositoryURL = "git@github.com:academypoa/AirtableKit.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.0.0;
